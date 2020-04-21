@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+
 	//"encoding/json"
 	"fmt"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/openstack"
-	"github.com/tuzkibug/testopenstack/base"
+	"github.com/tuzkibug/auto-echo/base"
 )
 
 func Createmysql(c echo.Context) (err error) {
@@ -34,8 +35,9 @@ func Createmysql(c echo.Context) (err error) {
 		return
 	}
 	mysqlname := m.MysqlName
-	base.CreateMysqlInstance(provider, mysqlname)
+	//base.CreateMysqlInstance(provider, mysqlname)
+	server_id := base.CreateMysqlInstance(provider, mysqlname)
 
-	return c.String(http.StatusOK, "The mysql server is created! The IP:PORT is "+""+":3306")
+	return c.String(http.StatusOK, "The Mysql server ID is "+server_id)
 
 }

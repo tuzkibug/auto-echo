@@ -191,12 +191,12 @@ func ListSubNets(provider *gophercloud.ProviderClient) (result []subnets.Subnet)
 	return result
 }
 
-func CreateMysqlInstance(provider *gophercloud.ProviderClient, name string) {
+func CreateMysqlInstance(provider *gophercloud.ProviderClient, name string) (ServerID string) {
 	//fmt.Println("create instance..........")
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
 		Region: "RegionOne",
 	})
-	_, err = servers.Create(client, servers.CreateOpts{
+	ss, err := servers.Create(client, servers.CreateOpts{
 		Name:      name,
 		FlavorRef: "5036ba69-7ce1-4e7e-aab1-e0de37c4cea0",
 		ImageRef:  "e1e4538b-eab4-45a0-ae50-dd36ea48b0da",
@@ -212,7 +212,20 @@ func CreateMysqlInstance(provider *gophercloud.ProviderClient, name string) {
 		return
 	}
 	//fmt.Println(ss)
-	return
+	return ss.ID
+}
+
+func GetServerIP(provider *gophercloud.ProviderClient, server_id string) (result *servers.Server) {
+	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
+		Region: "RegionOne",
+	})
+	if err != nil {
+		fmt.Printf("Get : %v", err)
+		return
+	}
+	server, _ := servers.Get(client, server_id).Extract()
+	return server
+
 }
 
 func DeleteServer(provider *gophercloud.ProviderClient) {

@@ -7,8 +7,8 @@ import (
 	_ "github.com/go-sql-driver/mysql" // 引入包，不使用，使其调用init函数注册mysql
 )
 
-func ConnectToMysql(newpassword string) {
-	db, err := sql.Open("mysql", "root@tcp("+"192.168.56.109"+":3306)/mysql?charset=utf8mb4")
+func ConnectToMysql(mysql_ip string, newpassword string) (err error) {
+	db, err := sql.Open("mysql", "root@tcp("+mysql_ip+":3306)/mysql?charset=utf8mb4")
 	if err != nil {
 		fmt.Println("创建数据库对象失败")
 		return
@@ -35,8 +35,9 @@ func ConnectToMysql(newpassword string) {
 	// 非常重要：确保QueryRow之后调用Scan方法，否则持有的数据库链接不会被释放
 	err = db.QueryRow(sqlStr).Scan()
 	if err != nil {
-		fmt.Printf("failed, err:%v\n", err)
-		return
+		fmt.Printf("err:%v\n", err)
 	}
-	fmt.Println("root password is changed ! New password is root!")
+	fmt.Println("root password is changed ! New password is " + newpassword)
+
+	return
 }
