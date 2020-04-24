@@ -18,5 +18,7 @@ func main() {
 	e.GET("/mysqlip", controllers.MysqlIP)
 	//配置mysql root密码
 	e.POST("/mysqlrootpassword", controllers.MysqlPasswordInitial)
+	//测试SSH远程登录和执行命令
+	e.POST("testssh", controllers.Test_SSH_run)
 	e.Logger.Fatal(e.Start(":8889"))
 }

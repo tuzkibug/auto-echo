@@ -9,6 +9,7 @@ type MsgMysqlCreate struct {
 }
 
 /*
+创建mysql虚拟机时构造的请求
 header:
 Content-Type:application/json
 body:
@@ -29,6 +30,7 @@ type MsgMysqlPasswordInitial struct {
 }
 
 /*
+初始化mysql密码时构造的请求
 {
   "mysql_ip":"192.168.56.109",
   "newpassword":"root"
@@ -44,6 +46,7 @@ type MsgMysqlDetail struct {
 }
 
 /*
+获取mysql IP的请求
 header:
 Content-Type:application/json
 body:
@@ -53,5 +56,27 @@ body:
   "domain_name":"default",
   "tenant_id":"6e57ee69fb0740fc89e53f3bea47a545",
   "mysql_id":"c6f645a5-5d5b-4e41-b89a-6b48dd1a23c5"
+}
+*/
+
+type MsgVMSSH struct {
+	Username string `json:"username" form:"username" query:"username"`
+	Password string `json:"password" form:"password" query:"password"`
+	SshIP    string `json:"sship" form:"sship" query:"sship"`
+	Sshport  int    `json:"sshport" form:"sshport" query:"sshport"`
+	Cmd      string `json:"cmd" form:"cmd" query:"cmd"`
+}
+
+/*
+向远程主机发起SSH连接并执行命令时构造的请求
+header:
+Content-Type:application/json
+body:
+{
+  "username":"root",
+  "password":"root",
+  "sship":"192.168.56.109",
+  "sshport":"22",
+  "cmd":"/root/install_mysql.sh"
 }
 */
