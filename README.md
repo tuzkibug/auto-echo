@@ -16,3 +16,6 @@
 
 # 自动化业务逻辑
 创建虚拟机-->SSH远程连接虚拟机-->安装mysql-->获取mysql信息（IP）-->初始化mysql密码-->数据库优化和主备配置(暂无)-->交付用户
+
+# my.cnf.master & my.cnf.slave
+用于mysql数据库主备配置的文件
