@@ -8,7 +8,7 @@ import (
 	"github.com/tuzkibug/auto-echo/base"
 )
 
-func Test_SSH_run(c echo.Context) (err error) {
+func SSH_run_cmd(c echo.Context) (err error) {
 	u := new(MsgVMSSH)
 	ciphers := []string{}
 	if err = c.Bind(u); err != nil {

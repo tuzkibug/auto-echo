@@ -1,0 +1,2 @@
+mysql -u root -e "show master status;" | sed -n "2p" | awk '{print $1}' #取master 主备binlog文件名
+mysql -u root -e "show master status;" | sed -n "2p" | awk '{print $2}' #取master 主备binlog位置

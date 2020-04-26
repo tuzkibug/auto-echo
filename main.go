@@ -19,6 +19,9 @@ func main() {
 	//配置mysql root密码
 	e.POST("/mysqlrootpassword", controllers.MysqlPasswordInitial)
 	//测试SSH远程登录和执行命令
-	e.POST("testssh", controllers.Test_SSH_run)
+	e.POST("/testssh", controllers.SSH_run_cmd)
+	//向远程主机sftp上传文件
+	e.POST("/sftp", controllers.UploadSSH)
+
 	e.Logger.Fatal(e.Start(":8889"))
 }

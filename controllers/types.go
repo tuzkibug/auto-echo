@@ -76,7 +76,31 @@ body:
   "username":"root",
   "password":"root",
   "sship":"192.168.56.109",
-  "sshport":"22",
+  "sshport":22,
   "cmd":"/root/install_mysql.sh"
+}
+*/
+
+type MsgUploadSSH struct {
+	Username   string `json:"username" form:"username" query:"username"`
+	Password   string `json:"password" form:"password" query:"password"`
+	SshIP      string `json:"sship" form:"sship" query:"sship"`
+	Sshport    int    `json:"sshport" form:"sshport" query:"sshport"`
+	Localpath  string `json:"localpath" form:"localpath" query:"localpath"`
+	Remotepath string `json:"remotepath" form:"remotepath" query:"remotepath"`
+}
+
+/*
+向远程主机上传本地文件时构造的请求
+header:
+Content-Type:application/json
+body:
+{
+  "username":"root",
+  "password":"root",
+  "sship":"192.168.56.109",
+  "sshport":22,
+  "localpath":"my.cnf.master",
+  "remotepath":"/etc/"
 }
 */

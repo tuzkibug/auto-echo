@@ -40,6 +40,6 @@ func MysqlIP(c echo.Context) (err error) {
 	detail := *server_ip
 	d := detail.Addresses["vxlan_172_16_2"].([]interface{})[0].(map[string]interface{})["addr"]
 
-	return c.String(http.StatusOK, "The Mysql server ip:port is "+d.(string)+":3306")
+	return c.String(http.StatusOK, d.(string)+":3306")
 
 }

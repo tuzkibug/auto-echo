@@ -3,12 +3,7 @@ package controllers
 import (
 	"net/http"
 
-	//"encoding/json"
 	"fmt"
-
-	//  "io/ioutil"
-
-	//	"time"
 
 	"github.com/labstack/echo"
 	"github.com/rackspace/gophercloud"
@@ -38,6 +33,6 @@ func Createmysql(c echo.Context) (err error) {
 	//base.CreateMysqlInstance(provider, mysqlname)
 	server_id := base.CreateMysqlInstance(provider, mysqlname)
 
-	return c.String(http.StatusOK, "The Mysql server ID is "+server_id)
+	return c.String(http.StatusOK, server_id)
 
 }
