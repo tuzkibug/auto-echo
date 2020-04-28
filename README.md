@@ -18,7 +18,12 @@ mysql部署和主备配置时可能用到的脚本或配置
 高性能，编码极简，高扩展性，极轻量级
 
 # 自动化业务逻辑
-创建虚拟机-->SSH远程连接虚拟机-->安装mysql-->获取mysql信息（IP）-->初始化mysql密码-->数据库优化和主备配置(暂无)-->交付用户
+创建虚拟机(返回虚拟机ID)-->获取mysql信息(返回IP，mac)-->绑定浮动IP(返回浮动IP)-->SSH远程连接虚拟机-->执行安装脚本安装mysql-->初始化mysql密码(返回密码)-->传递文件和脚本-->执行数据库优化和主备配置(暂无)-->交付用户
+
+其中绑定浮动IP没有API，需转发http请求进行资源创建，分为以下几步：
+1.获取token(返回token字符串)
+2.通过mac获取port-id(返回port id) /v2.0/ports?mac_address=xxxxxx&fields=id
+3.创建floating ip并绑定port(返回floating ip)
 
 # my.cnf.master & my.cnf.slave
 用于mysql数据库主备配置的文件
