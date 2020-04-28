@@ -198,11 +198,11 @@ func CreateMysqlInstance(provider *gophercloud.ProviderClient, name string) (Ser
 	})
 	ss, err := servers.Create(client, servers.CreateOpts{
 		Name:      name,
-		FlavorRef: "5036ba69-7ce1-4e7e-aab1-e0de37c4cea0",
-		ImageRef:  "e1e4538b-eab4-45a0-ae50-dd36ea48b0da",
+		FlavorRef: "80588d70-7ba5-4863-8f77-d11170b2a007",
+		ImageRef:  "26e3fbd2-8beb-40fd-aa0f-dc285a56dcde",
 		//AvailabilityZone:"nova",
 		Networks: []servers.Network{
-			servers.Network{UUID: "41485362-67a1-473e-9937-acb17f3f5344"},
+			servers.Network{UUID: "2a8e355c-254e-4538-ab08-61a99c1da548"},
 		},
 		//AdminPass: "root",
 	}).Extract()
@@ -229,8 +229,6 @@ func GetServerIP(provider *gophercloud.ProviderClient, server_id string) (result
 }
 
 func DeleteServer(provider *gophercloud.ProviderClient) {
-
-	fmt.Println("Which server do you want to delete, please give the server id)")
 	serverID := ""
 	fmt.Scanln(&serverID)
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{

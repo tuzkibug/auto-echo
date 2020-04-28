@@ -104,3 +104,25 @@ body:
   "remotepath":"/etc/"
 }
 */
+
+type MsgOPSDomain struct {
+	DomainName string `json:"name" form:"name" query:"name"`
+}
+
+type MsgOPSUser struct {
+	UserName     string `json:"name" form:"name" query:"name"`
+	MsgOPSDomain `json:"domain" form:"domain" query:"domain"`
+	UserPassword string `json:"password" form:"password" query:"password"`
+}
+
+type MsgOPSPassword struct {
+	MsgOPSUser `json:"user" form:"user" query:"user"`
+}
+
+type MsgOPSIdentity struct {
+	MsgOPSPassword `json:"identity" form:"identity" query:"identity"`
+}
+
+type MsgOPSAuth struct {
+	MsgOPSIdentity `json:"auth" form:"auth" query:"auth"`
+}
