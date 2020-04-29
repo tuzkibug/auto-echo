@@ -126,3 +126,28 @@ type MsgOPSIdentity struct {
 type MsgOPSAuth struct {
 	MsgOPSIdentity `json:"auth" form:"auth" query:"auth"`
 }
+
+type MsgPortMac struct {
+	PortMac string `json:"port_mac" form:"port_mac" query:"port_mac"`
+}
+
+/*
+获取port id时构造的请求
+body:
+{
+  "port_mac":"fa:16:3e:f4:48:f1"
+}
+*/
+
+type MsgMysqlCluster struct {
+	Username          string `json:"username" form:"username" query:"username"`
+	Password          string `json:"password" form:"password" query:"password"`
+	DomainName        string `json:"domain_name" form:"domain_name" query:"domain_name"`
+	TenantID          string `json:"tenant_id" form:"tenant_id" query:"tenant_id"`
+	VMRootPassword    string `json:"vm_root_password" form:"vm_root_password" query:"vm_root_password"`
+	MysqlRootPassword string `json:"mysql_root_password" form:"mysql_root_password" query:"mysql_root_password"`
+	NetworkID         string `json:"net_id" form:"net_id" query:"net_id"`
+	NetworkName       string `json:"net_name" form:"net_name" query:"net_name"`
+	FlavorID          string `json:"flavor_id" form:"flavor_id" query:"flavor_id"`
+	ImageID           string `json:"image_id" form:"image_id" query:"image_id"`
+}

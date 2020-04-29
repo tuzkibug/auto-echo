@@ -13,6 +13,51 @@ import (
 	"github.com/rackspace/gophercloud/pagination"
 )
 
+func CreateMysql(provider *gophercloud.ProviderClient, filename string, flavorID string, imageID string, netID string) (ServerID string) {
+	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
+		Region: "RegionOne",
+	})
+	//随机生成虚拟机名称
+	name := CreateRandom()
+	//读配置文件
+	file, err := ReadAll(filename)
+	if err != nil {
+		fmt.Printf("File read error : %v", err)
+		return
+	}
+	ss, err := servers.Create(client, servers.CreateOpts{
+		Name:      name,
+		FlavorRef: flavorID,
+		ImageRef:  imageID,
+		//AvailabilityZone:"nova",
+		Networks: []servers.Network{
+			servers.Network{UUID: netID},
+		},
+		UserData: file,
+		//AdminPass: "root",
+	}).Extract()
+
+	if err != nil {
+		fmt.Printf("Create : %v", err)
+		return
+	}
+	//fmt.Println(ss)
+	return ss.ID
+}
+
+func GetServerIP(provider *gophercloud.ProviderClient, server_id string) (result *servers.Server) {
+	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
+		Region: "RegionOne",
+	})
+	if err != nil {
+		fmt.Printf("Get : %v", err)
+		return
+	}
+	server, _ := servers.Get(client, server_id).Extract()
+	return server
+
+}
+
 func ListFlavors(provider *gophercloud.ProviderClient) (result []flavors.Flavor) {
 	method := "ListFlavors"
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
@@ -189,43 +234,6 @@ func ListSubNets(provider *gophercloud.ProviderClient) (result []subnets.Subnet)
 		return true, err
 	})
 	return result
-}
-
-func CreateMysqlInstance(provider *gophercloud.ProviderClient, name string) (ServerID string) {
-	//fmt.Println("create instance..........")
-	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
-		Region: "RegionOne",
-	})
-	ss, err := servers.Create(client, servers.CreateOpts{
-		Name:      name,
-		FlavorRef: "80588d70-7ba5-4863-8f77-d11170b2a007",
-		ImageRef:  "26e3fbd2-8beb-40fd-aa0f-dc285a56dcde",
-		//AvailabilityZone:"nova",
-		Networks: []servers.Network{
-			servers.Network{UUID: "2a8e355c-254e-4538-ab08-61a99c1da548"},
-		},
-		//AdminPass: "root",
-	}).Extract()
-
-	if err != nil {
-		fmt.Printf("Create : %v", err)
-		return
-	}
-	//fmt.Println(ss)
-	return ss.ID
-}
-
-func GetServerIP(provider *gophercloud.ProviderClient, server_id string) (result *servers.Server) {
-	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
-		Region: "RegionOne",
-	})
-	if err != nil {
-		fmt.Printf("Get : %v", err)
-		return
-	}
-	server, _ := servers.Get(client, server_id).Extract()
-	return server
-
 }
 
 func DeleteServer(provider *gophercloud.ProviderClient) {

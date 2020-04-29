@@ -29,9 +29,14 @@ func Createmysql(c echo.Context) (err error) {
 		fmt.Printf("%v", err)
 		return
 	}
-	mysqlname := m.MysqlName
+
 	//base.CreateMysqlInstance(provider, mysqlname)
-	server_id := base.CreateMysqlInstance(provider, mysqlname)
+	file_name := "base.txt"
+	flavor_id := "80588d70-7ba5-4863-8f77-d11170b2a007"
+	image_id := "26e3fbd2-8beb-40fd-aa0f-dc285a56dcde"
+	network_id := "2a8e355c-254e-4538-ab08-61a99c1da548"
+
+	server_id := base.CreateMysql(provider, file_name, flavor_id, image_id, network_id)
 
 	return c.String(http.StatusOK, server_id)
 
