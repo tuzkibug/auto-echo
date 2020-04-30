@@ -11,6 +11,8 @@ import (
 	"github.com/tuzkibug/auto-echo/base"
 )
 
+//获取mysql服务器IP及对应端口的MAC
+
 func MysqlIP(c echo.Context) (err error) {
 	m := new(MsgMysqlDetail)
 	//调用echo.Context的Bind函数将请求参数和User对象进行绑定。

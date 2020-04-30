@@ -11,6 +11,8 @@ import (
 	//"github.com/tuzkibug/auto-echo/base"
 )
 
+//获取openstack认证token
+
 func Getusertoken(c echo.Context) (err error) {
 	m := new(MsgMysqlCreate)
 	if err = c.Bind(m); err != nil {

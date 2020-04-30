@@ -11,6 +11,8 @@ import (
 	"github.com/tuzkibug/auto-echo/base"
 )
 
+//测试用，拉起单独的mysql虚拟机
+
 func Createmysql(c echo.Context) (err error) {
 	m := new(MsgMysqlCreate)
 	//调用echo.Context的Bind函数将请求参数和User对象进行绑定。
@@ -31,7 +33,7 @@ func Createmysql(c echo.Context) (err error) {
 	}
 
 	//base.CreateMysqlInstance(provider, mysqlname)
-	file_name := "base.txt"
+	file_name := "base_master.txt"
 	flavor_id := "80588d70-7ba5-4863-8f77-d11170b2a007"
 	image_id := "26e3fbd2-8beb-40fd-aa0f-dc285a56dcde"
 	network_id := "2a8e355c-254e-4538-ab08-61a99c1da548"

@@ -13,6 +13,8 @@ import (
 	"github.com/rackspace/gophercloud/pagination"
 )
 
+//openstack基本操作函数，包括拉起、查询等
+
 func CreateMysql(provider *gophercloud.ProviderClient, filename string, flavorID string, imageID string, netID string) (ServerID string) {
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
 		Region: "RegionOne",

@@ -8,6 +8,8 @@ import (
 	"github.com/tuzkibug/auto-echo/base"
 )
 
+//ssh连接虚拟机并执行shell命令或脚本
+
 func SSH_run_cmd(c echo.Context) (err error) {
 	u := new(MsgVMSSH)
 	ciphers := []string{}

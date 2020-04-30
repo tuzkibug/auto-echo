@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+/*
+随机生成哈希字符串
+*/
+
 func CreateRandom() string {
 	t := time.Now()
 	h := md5.New()

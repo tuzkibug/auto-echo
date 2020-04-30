@@ -3,12 +3,15 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/openstack"
 	"github.com/tuzkibug/auto-echo/base"
 )
+
+//自动化部署mysql主备集群
 
 func BuilMysqlCluster(c echo.Context) (err error) {
 	m := new(MsgMysqlCluster)
@@ -34,16 +37,20 @@ func BuilMysqlCluster(c echo.Context) (err error) {
 	//拉起主mysql虚拟机
 	master_id := base.CreateMysql(provider, "master.txt", m.FlavorID, m.ImageID, m.NetworkID)
 	//获取虚拟机IP,MAC
+	time.Sleep(30 * time.Second)
 	master_ip := base.GetServerIP(provider, master_id)
 	master_detail := *master_ip
 	master_addr := master_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
 	master_mac_addr := master_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
+	//等待主节点安装配置完成
+	time.Sleep(120 * time.Second)
 
 	//修改并生成slave启动脚本
 	base.ModifySlaveScript(m.VMRootPassword, m.MysqlRootPassword, master_addr.(string))
 	//拉起备mysql虚拟机
 	slave_id := base.CreateMysql(provider, "slave.txt", m.FlavorID, m.ImageID, m.NetworkID)
 	//获取虚拟机IP,MAC
+	time.Sleep(30 * time.Second)
 	slave_ip := base.GetServerIP(provider, slave_id)
 	slave_detail := *slave_ip
 	slave_addr := slave_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]

@@ -6,8 +6,10 @@ import (
 	"strings"
 )
 
+//启动脚本修改函数
+
 func ModifyMasterScript(vmpassword string, mysqlpassword string) {
-	filepath := "base.txt"
+	filepath := "base_master.txt"
 	file, err := ReadAll(filepath)
 	filestr := string(file)
 	filestr_1 := strings.Replace(filestr, "aaa", vmpassword, -1)

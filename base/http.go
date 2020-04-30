@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+//http GET/POST请求方法
+
 func httpDo(method string, url string, msg string) (result string) {
 	client := &http.Client{}
 	body := bytes.NewBuffer([]byte(msg))

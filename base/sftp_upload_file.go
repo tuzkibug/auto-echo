@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/sftp"
 )
 
+//SSH上传文件到指定路径
+
 func UploadFile(sftpClient *sftp.Client, localFilePath string, remotePath string) {
 	srcFile, err := os.Open(localFilePath)
 	if err != nil {

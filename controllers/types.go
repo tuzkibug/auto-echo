@@ -1,5 +1,39 @@
 package controllers
 
+//构造的结构体，对应http请求参数
+
+type MsgMysqlCluster struct {
+	Username          string `json:"username" form:"username" query:"username"`
+	Password          string `json:"password" form:"password" query:"password"`
+	DomainName        string `json:"domain_name" form:"domain_name" query:"domain_name"`
+	TenantID          string `json:"tenant_id" form:"tenant_id" query:"tenant_id"`
+	VMRootPassword    string `json:"vm_root_password" form:"vm_root_password" query:"vm_root_password"`
+	MysqlRootPassword string `json:"mysql_root_password" form:"mysql_root_password" query:"mysql_root_password"`
+	NetworkID         string `json:"net_id" form:"net_id" query:"net_id"`
+	NetworkName       string `json:"net_name" form:"net_name" query:"net_name"`
+	FlavorID          string `json:"flavor_id" form:"flavor_id" query:"flavor_id"`
+	ImageID           string `json:"image_id" form:"image_id" query:"image_id"`
+}
+
+/*
+创建mysql集群时构造的请求
+header:
+Content-Type:application/json
+body:
+{
+  "username":"admin",
+  "password":"Pcl_kolla_123",
+  "domain_name":"192.168.56.109",
+  "tenant_id":22,
+  "vm_root_password":"root",
+  "mysql_root_password":"root",
+  "net_id":"2a8e355c-254e-4538-ab08-61a99c1da548",
+  "net_name":"test_net",
+  "flavor_id":"33d486b1-e550-4a9b-a950-e6efbf22c2a5",
+  "image_id":"3745d099-0705-4bf3-a724-b83c38c233eb"
+}
+*/
+
 type MsgMysqlCreate struct {
 	Username   string `json:"username" form:"username" query:"username"`
 	Password   string `json:"password" form:"password" query:"password"`
@@ -138,16 +172,3 @@ body:
   "port_mac":"fa:16:3e:f4:48:f1"
 }
 */
-
-type MsgMysqlCluster struct {
-	Username          string `json:"username" form:"username" query:"username"`
-	Password          string `json:"password" form:"password" query:"password"`
-	DomainName        string `json:"domain_name" form:"domain_name" query:"domain_name"`
-	TenantID          string `json:"tenant_id" form:"tenant_id" query:"tenant_id"`
-	VMRootPassword    string `json:"vm_root_password" form:"vm_root_password" query:"vm_root_password"`
-	MysqlRootPassword string `json:"mysql_root_password" form:"mysql_root_password" query:"mysql_root_password"`
-	NetworkID         string `json:"net_id" form:"net_id" query:"net_id"`
-	NetworkName       string `json:"net_name" form:"net_name" query:"net_name"`
-	FlavorID          string `json:"flavor_id" form:"flavor_id" query:"flavor_id"`
-	ImageID           string `json:"image_id" form:"image_id" query:"image_id"`
-}

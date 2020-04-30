@@ -13,6 +13,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+//ssh上传文件
+
 func connect(user, password, host string, port int) (*sftp.Client, error) {
 	var (
 		auth         []ssh.AuthMethod

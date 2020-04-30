@@ -7,6 +7,8 @@ import (
 	"github.com/tuzkibug/auto-echo/base"
 )
 
+//测试用，mysql数据库密码修改，已在新方案中废弃
+
 func MysqlPasswordInitial(c echo.Context) (err error) {
 	p := new(MsgMysqlPasswordInitial)
 	//调用echo.Context的Bind函数将请求参数和User对象进行绑定。
