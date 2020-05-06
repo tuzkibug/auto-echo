@@ -15,6 +15,7 @@ import (
 
 //openstack基本操作函数，包括拉起、查询等
 
+//创建mysql虚拟机
 func CreateMysql(provider *gophercloud.ProviderClient, filename string, flavorID string, imageID string, netID string) (ServerID string) {
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
 		Region: "RegionOne",
@@ -47,6 +48,7 @@ func CreateMysql(provider *gophercloud.ProviderClient, filename string, flavorID
 	return ss.ID
 }
 
+//获取虚拟机相关信息
 func GetServerIP(provider *gophercloud.ProviderClient, server_id string) (result *servers.Server) {
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
 		Region: "RegionOne",

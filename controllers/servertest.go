@@ -71,5 +71,28 @@ func Servertest(c echo.Context) (err error) {
 	port_id := str[17:53]
 
 	fmt.Println(port_id)
+
+	/*	floating_url := "http://10.10.108.250:9696/v2.0/floatingips"
+		floating_ip_network_id := "b9f41ba5-c37b-43dd-ad8b-e90ffe871a08"
+		floating_req_body := `{"floatingip": {"floating_network_id": "` + floating_ip_network_id + `","tenant_id": "` + m.TenantID + `","project_id": "` + m.TenantID + `","port_id": "` + port_id + `","fixed_ip_address": "` + master_addr.(string) + `"}}`
+
+		var jsonStr3 = []byte(floating_req_body)
+		req3, err := http.NewRequest("POST", floating_url, bytes.NewBuffer(jsonStr3))
+		req3.Header.Set("X-Auth-Token", token)
+
+		client3 := &http.Client{}
+		resp3, err := client3.Do(req3)
+		if err != nil {
+			panic(err)
+		}
+		defer resp3.Body.Close()
+		//fmt.Println("status", resp.Status)
+		//fmt.Println("response:", resp.Header)
+		body3, _ := ioutil.ReadAll(resp3.Body)
+		//fmt.Println("response Body:", string(body))
+		str3 := string(body)
+
+		fmt.Println(str)
+	*/
 	return
 }
