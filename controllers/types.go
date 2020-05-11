@@ -22,15 +22,15 @@ Content-Type:application/json
 body:
 {
   "username":"admin",
-  "password":"Pcl_kolla_123",
-  "domain_name":"192.168.56.109",
-  "tenant_id":22,
+  "password":"3Fu6^JZ$JOaKuBRW",
+  "domain_name":"default",
+  "tenant_id":"d570f18995794b428ce68464b3a870f7",
   "vm_root_password":"root",
   "mysql_root_password":"root",
   "net_id":"2a8e355c-254e-4538-ab08-61a99c1da548",
   "net_name":"test_net",
   "flavor_id":"33d486b1-e550-4a9b-a950-e6efbf22c2a5",
-  "image_id":"3745d099-0705-4bf3-a724-b83c38c233eb"
+  "image_id":"ead8d78b-d7eb-47ff-844b-3381f230a75f"
 }
 */
 
@@ -172,3 +172,74 @@ body:
   "port_mac":"fa:16:3e:f4:48:f1"
 }
 */
+
+type MsgCDHCluster struct {
+	OpenstackIP string `json:"op_ip" form:"op_ip" query:"op_ip"`
+	Username    string `json:"username" form:"username" query:"username"`
+	Password    string `json:"password" form:"password" query:"password"`
+	DomainName  string `json:"domain_name" form:"domain_name" query:"domain_name"`
+	TenantID    string `json:"tenant_id" form:"tenant_id" query:"tenant_id"`
+	//VMRootPassword    string `json:"vm_root_password" form:"vm_root_password" query:"vm_root_password"`
+	//MysqlRootPassword string `json:"mysql_root_password" form:"mysql_root_password" query:"mysql_root_password"`
+	NetworkID         string `json:"net_id" form:"net_id" query:"net_id"`
+	NetworkName       string `json:"net_name" form:"net_name" query:"net_name"`
+	FloatingNetworkID string `json:"f_net_id" form:"f_net_id" query:"f_net_id"`
+	FlavorID          string `json:"flavor_id" form:"flavor_id" query:"flavor_id"`
+	ServerImageID     string `json:"server_image_id" form:"server_image_id" query:"server_image_id"`
+	AgentImageID      string `json:"agent_image_id" form:"agent_image_id" query:"agent_image_id"`
+	//SeverNum    string `json:"server_num" form:"server_num" query:"server_num"`
+	//AgentNum    string `json:"agent_num" form:"agent_num" query:"agent_num"`
+}
+
+/*
+创建cdh集群时构造的请求
+header:
+Content-Type:application/json
+body:
+{
+  "op_ip":"10.10.191.250",
+  "username":"yunwei",
+  "password":"Cs_k0lla_!23",
+  "domain_name":"Default",
+  "tenant_id":"88434702de204a568204bd5d1c9236d0",
+  "net_id":"71d7fca3-0de4-4a3b-8c83-6b63874c2912",
+  "net_name":"zhujj_net",
+  "f_net_id":"79ef3620-2fb2-4fa4-82a7-fbbd42243b4d",
+  "flavor_id":"4c52ae46-88a3-4946-b749-71cd40f211da",
+  "server_image_id":"aafe0a95-42ca-4690-9dbe-e1924bac3941",
+  "agent_image_id":"e169da6d-c5e9-4f8f-9c3f-74b0bd03e9d9"
+}
+*/
+
+type Port_detail struct {
+	Status       string `json:"status" form:"status" query:"status"`
+	Name         string `json:"name" form:"name" query:"name"`
+	AdminStateUp bool   `json:"admin_state_up" form:"admin_state_up" query:"admin_state_up"`
+	NetworkId    string `json:"network_id" form:"network_id" query:"network_id"`
+	DeviceOwner  string `json:"device_owner" form:"device_owner" query:"device_owner"`
+	MacAddress   string `json:"mac_address" form:"mac_address" query:"mac_address"`
+	DeviceId     string `json:"device_id" form:"device_id" query:"device_id"`
+}
+
+type FIP_detail struct {
+	RouterId          string      `json:"router_id" form:"router_id" query:"router_id"`
+	Status            string      `json:"status" form:"status" query:"status"`
+	Description       string      `json:"description" form:"description" query:"description"`
+	Tags              []string    `json:"tags" form:"tags" query:"tags"`
+	TenantId          string      `json:"tenant_id" form:"tenant_id" query:"tenant_id"`
+	CreatedAt         string      `json:"created_at" form:"created_at" query:"created_at"`
+	UpdatedAt         string      `json:"updated_at" form:"updated_at" query:"updated_at"`
+	FloatingNetworkId string      `json:"floating_network_id" form:"floating_network_id" query:"floating_network_id"`
+	Portdetail        Port_detail `json:"port_details" form:"port_details" query:"port_details"`
+	FixedIp           string      `json:"fixed_ip_address" form:"fixed_ip_address" query:"fixed_ip_address"`
+	FloatingIp        string      `json:"floating_ip_address" form:"floating_ip_address" query:"floating_ip_address"`
+	RevisionNum       int         `json:"revision_number" form:"revision_number" query:"revision_number"`
+	ProjectId         string      `json:"project_id" form:"project_id" query:"project_id"`
+	PortId            string      `json:"port_id" form:"port_id" query:"port_id"`
+	Id                string      `json:"id" form:"id" query:"id"`
+	QosPolicyId       string      `json:"qos_policy_id" form:"qos_policy_id" query:"qos_policy_id"`
+}
+
+type FIP struct {
+	FloatingIp FIP_detail `json:"floatingip" form:"floatingip" query:"floatingip"`
+}

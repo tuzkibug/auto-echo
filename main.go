@@ -14,14 +14,16 @@ func main() {
 	e.GET("/test", controllers.Servertest)
 	//全流程自动化拉起mysql主备集群
 	e.POST("/automysql", controllers.BuilMysqlCluster)
+	//全流程自动化拉起CDH集群
+	e.POST("/autocdh", controllers.BuilCDHCluster)
 	//创建mysql
 	//e.POST("/createmysql", controllers.Createmysql)
 	//获取mysql IP
 	//e.GET("/mysqlip", controllers.MysqlIP)
 	//获取mysql mac
-	e.GET("/mysqlmac", controllers.MysqlMAC)
+	//e.GET("/mysqlmac", controllers.MysqlMAC)
 	//获取mysql port id
-	e.GET("/mysqlportid", controllers.Getportid)
+	//e.GET("/mysqlportid", controllers.Getportid)
 	//配置mysql root密码
 	//e.POST("/mysqlrootpassword", controllers.MysqlPasswordInitial)
 	//测试SSH远程登录和执行命令
