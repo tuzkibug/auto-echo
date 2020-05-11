@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
+	"github.com/pkg/sftp"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/openstack"
 	"github.com/tuzkibug/auto-echo/base"
@@ -36,11 +37,15 @@ func BuilCDHCluster(c echo.Context) (err error) {
 	}
 
 	//拉起server虚拟机
-	server_id := base.CreateCDHServer(provider, m.ServerFlavorID, m.ServerImageID, m.NetworkID)
+	server_name := base.CreateCDHServerName()
+	server_id := base.CreateCDHServer(provider, server_name, m.ServerFlavorID, m.ServerImageID, m.NetworkID)
 	//拉起agent虚拟机
-	agent1_id := base.CreateCDHAgent(provider, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
-	agent2_id := base.CreateCDHAgent(provider, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
-	agent3_id := base.CreateCDHAgent(provider, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
+	a1_name := base.CreateCDHAgentName()
+	agent1_id := base.CreateCDHAgent(provider, a1_name, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
+	a2_name := base.CreateCDHAgentName()
+	agent2_id := base.CreateCDHAgent(provider, a2_name, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
+	a3_name := base.CreateCDHAgentName()
+	agent3_id := base.CreateCDHAgent(provider, a3_name, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
 
 	//获取server虚拟机IP,MAC
 LOOP0:
@@ -272,7 +277,7 @@ LOOP4:
 	var serverstdoutBuf bytes.Buffer
 	session.Stdout = &serverstdoutBuf
 	session.Run(cmdstr)
-	session.Run("df -h")
+	session.Run("rm -rf /etc/hosts")
 
 	//agent1分区扩容
 LOOP5:
@@ -285,7 +290,7 @@ LOOP5:
 	var a1stdoutBuf bytes.Buffer
 	a1session.Stdout = &a1stdoutBuf
 	a1session.Run(cmdstr)
-	a1session.Run("df -h")
+	a1session.Run("rm -rf /etc/hosts")
 
 	//agent2分区扩容
 LOOP6:
@@ -298,7 +303,7 @@ LOOP6:
 	var a2stdoutBuf bytes.Buffer
 	a2session.Stdout = &a2stdoutBuf
 	a2session.Run(cmdstr)
-	a2session.Run("df -h")
+	a2session.Run("rm -rf /etc/hosts")
 
 	//agent3分区扩容
 LOOP7:
@@ -311,7 +316,62 @@ LOOP7:
 	var a3stdoutBuf bytes.Buffer
 	a3session.Stdout = &a3stdoutBuf
 	a3session.Run(cmdstr)
-	a3session.Run("df -h")
+	a3session.Run("rm -rf /etc/hosts")
+
+	//编辑etc/hosts文件
+	base.ModifyEtcHosts(server_addr.(string), server_name, agent1_addr.(string), a1_name, agent2_addr.(string), a2_name, agent3_addr.(string), a3_name)
+	//sftp上传编辑后的文件到server虚拟机
+	var sftpClient *sftp.Client
+	sftpClient, err = connect(cdhuser, cdhpassword, __serverfResponse.FloatingIp.FloatingIp, 22)
+	if err != nil {
+		return
+	}
+	defer sftpClient.Close()
+
+	_, errStat := sftpClient.Stat("/etc/")
+	if errStat != nil {
+		return
+	}
+	base.UploadFile(sftpClient, "hosts", "/etc/")
+
+	//sftp上传编辑后的文件到a1虚拟机
+	sftpClient, err = connect(cdhuser, cdhpassword, __a1fResponse.FloatingIp.FloatingIp, 22)
+	if err != nil {
+		return
+	}
+	defer sftpClient.Close()
+
+	_, errStat = sftpClient.Stat("/etc/")
+	if errStat != nil {
+		return
+	}
+	base.UploadFile(sftpClient, "hosts", "/etc/")
+
+	//sftp上传编辑后的文件到a2虚拟机
+	sftpClient, err = connect(cdhuser, cdhpassword, __a2fResponse.FloatingIp.FloatingIp, 22)
+	if err != nil {
+		return
+	}
+	defer sftpClient.Close()
+
+	_, errStat = sftpClient.Stat("/etc/")
+	if errStat != nil {
+		return
+	}
+	base.UploadFile(sftpClient, "hosts", "/etc/")
+
+	//sftp上传编辑后的文件到a3虚拟机
+	sftpClient, err = connect(cdhuser, cdhpassword, __a3fResponse.FloatingIp.FloatingIp, 22)
+	if err != nil {
+		return
+	}
+	defer sftpClient.Close()
+
+	_, errStat = sftpClient.Stat("/etc/")
+	if errStat != nil {
+		return
+	}
+	base.UploadFile(sftpClient, "hosts", "/etc/")
 
 	return c.String(http.StatusOK, "OK")
 
