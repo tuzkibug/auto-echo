@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/labstack/echo"
@@ -130,7 +129,7 @@ LOOP3:
 	str := string(body)
 
 	port_id := str[17:53]
-	fmt.Println(str)
+	//fmt.Println(str)
 
 	//server绑定浮动IP
 	//api地址/v2.0/floatingips
@@ -152,16 +151,11 @@ LOOP3:
 
 	body3, _ := ioutil.ReadAll(resp3.Body)
 
-	str3 := string(body3)
-
-	location := strings.IndexAny(str3, "floating_ip_address")
-
-	__snsOauth2Response := FIP{}
-	if err := json.Unmarshal(body3, &__snsOauth2Response); err != nil {
+	__fResponse := FIP{}
+	if err := json.Unmarshal(body3, &__fResponse); err != nil {
 		return err
 	}
-
-	fmt.Println(__snsOauth2Response.FloatingIp.FloatingIp)
+	fmt.Println(__fResponse.FloatingIp.FloatingIp)
 
 	//通过mac地址获取agent1虚拟机port_id
 	port_url = "http://" + m.OpenstackIP + ":9696/v2.0/ports?mac_address=" + agent1_mac_addr.(string) + "&fields=id"
@@ -190,9 +184,11 @@ LOOP3:
 	}
 	defer resp3.Body.Close()
 	body3, _ = ioutil.ReadAll(resp3.Body)
-	str3 = string(body3)
-	location = strings.IndexAny(str3, "floating_ip_address")
-	fmt.Println(str3[location+23])
+	__fResponse = FIP{}
+	if err = json.Unmarshal(body3, &__fResponse); err != nil {
+		return err
+	}
+	fmt.Println(__fResponse.FloatingIp.FloatingIp)
 
 	//通过mac地址获取agent2虚拟机port_id
 	port_url = "http://" + m.OpenstackIP + ":9696/v2.0/ports?mac_address=" + agent2_mac_addr.(string) + "&fields=id"
@@ -221,9 +217,11 @@ LOOP3:
 	}
 	defer resp3.Body.Close()
 	body3, _ = ioutil.ReadAll(resp3.Body)
-	str3 = string(body3)
-	location = strings.IndexAny(str3, "floating_ip_address")
-	fmt.Println(str3[location+23])
+	__fResponse = FIP{}
+	if err = json.Unmarshal(body3, &__fResponse); err != nil {
+		return err
+	}
+	fmt.Println(__fResponse.FloatingIp.FloatingIp)
 
 	//通过mac地址获取agent3虚拟机port_id
 	port_url = "http://" + m.OpenstackIP + ":9696/v2.0/ports?mac_address=" + agent3_mac_addr.(string) + "&fields=id"
@@ -252,9 +250,11 @@ LOOP3:
 	}
 	defer resp3.Body.Close()
 	body3, _ = ioutil.ReadAll(resp3.Body)
-	str3 = string(body3)
-	location = strings.IndexAny(str3, "floating_ip_address")
-	fmt.Println(str3[location+23])
+	__fResponse = FIP{}
+	if err = json.Unmarshal(body3, &__fResponse); err != nil {
+		return err
+	}
+	fmt.Println(__fResponse.FloatingIp.FloatingIp)
 
 	return c.String(http.StatusOK, server_addr.(string)+" "+server_mac_addr.(string)+" "+agent1_addr.(string)+" "+agent1_mac_addr.(string)+" "+agent2_addr.(string)+" "+agent2_mac_addr.(string)+" "+agent3_addr.(string)+" "+agent3_mac_addr.(string))
 }

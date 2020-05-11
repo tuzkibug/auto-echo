@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"bytes"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -22,7 +24,7 @@ func BuilMysqlCluster(c echo.Context) (err error) {
 	}
 	//openstack用户认证
 	opts := gophercloud.AuthOptions{
-		IdentityEndpoint: "http://10.10.108.250:5000/v3",
+		IdentityEndpoint: "http://" + m.OpenstackIP + ":5000/v3",
 		Username:         m.Username,
 		Password:         m.Password,
 		DomainName:       m.DomainName,
@@ -39,30 +41,21 @@ func BuilMysqlCluster(c echo.Context) (err error) {
 	//拉起主mysql虚拟机
 	master_id := base.CreateMysql(provider, "master.txt", m.FlavorID, m.ImageID, m.NetworkID)
 	//获取虚拟机IP,MAC
-	time.Sleep(20 * time.Second)
+LOOP1:
 	master_ip := base.GetServerIP(provider, master_id)
 	master_detail := *master_ip
+	if master_detail.Status != "ACTIVE" {
+		time.Sleep(5 * time.Second)
+		goto LOOP1
+	}
 	master_addr := master_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
 	master_mac_addr := master_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
-	//等待主节点安装配置完成
-	time.Sleep(120 * time.Second)
-
-	//修改并生成slave启动脚本
-	base.ModifySlaveScript(m.VMRootPassword, m.MysqlRootPassword, master_addr.(string))
-	//拉起备mysql虚拟机
-	slave_id := base.CreateMysql(provider, "slave.txt", m.FlavorID, m.ImageID, m.NetworkID)
-	//获取虚拟机IP,MAC
-	time.Sleep(20 * time.Second)
-	slave_ip := base.GetServerIP(provider, slave_id)
-	slave_detail := *slave_ip
-	slave_addr := slave_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
-	slave_mac_addr := slave_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
 
 	//获取用户token
 	username := m.Username
 	password := m.Password
 	domainname := m.DomainName
-	url := "http://10.10.108.250:5000/v3/auth/tokens"
+	url := "http://" + m.OpenstackIP + ":5000/v3/auth/tokens"
 	reqbody := "{\"auth\": {\"identity\": {\"methods\": [\"password\"],\"password\": {\"user\": {\"name\": \"" + username + "\",\"domain\": {\"name\": \"" + domainname + "\"},\"password\": \"" + password + "\"}}}}}"
 
 	var jsonStr1 = []byte(reqbody)
@@ -86,7 +79,7 @@ func BuilMysqlCluster(c echo.Context) (err error) {
 	//通过mac地址获取主mysql虚拟机port_id
 	//mac := "fa:16:3e:aa:a4:8a"
 
-	port_url := "http://10.10.108.250:9696/v2.0/ports?mac_address=" + master_mac_addr.(string) + "&fields=id"
+	port_url := "http://" + m.OpenstackIP + ":9696/v2.0/ports?mac_address=" + master_mac_addr.(string) + "&fields=id"
 	fmt.Println(port_url)
 
 	var jsonStr2 = []byte("")
@@ -113,9 +106,8 @@ func BuilMysqlCluster(c echo.Context) (err error) {
 	//绑定浮动IP
 	//api地址/v2.0/floatingips
 	//http://10.10.108.250:9696/v2.0/floatingips
-	floating_url := "http://10.10.108.250:9696/v2.0/floatingips"
-	floating_ip_network_id := "b9f41ba5-c37b-43dd-ad8b-e90ffe871a08"
-	floating_req_body := `{"floatingip": {"floating_network_id": "` + floating_ip_network_id + `","tenant_id": "` + m.TenantID + `","project_id": "` + m.TenantID + `","port_id": "` + port_id + `","fixed_ip_address": "` + master_addr.(string) + `"}}`
+	floating_url := "http://" + m.OpenstackIP + ":9696/v2.0/floatingips"
+	floating_req_body := `{"floatingip": {"floating_network_id": "` + m.FloatingNetworkID + `","tenant_id": "` + m.TenantID + `","project_id": "` + m.TenantID + `","port_id": "` + port_id + `","fixed_ip_address": "` + master_addr.(string) + `"}}`
 
 	var jsonStr3 = []byte(floating_req_body)
 	req3, err := http.NewRequest("POST", floating_url, bytes.NewBuffer(jsonStr3))
@@ -130,9 +122,45 @@ func BuilMysqlCluster(c echo.Context) (err error) {
 
 	body3, _ := ioutil.ReadAll(resp3.Body)
 
-	str3 := string(body3)
+	__fResponse := FIP{}
+	if err := json.Unmarshal(body3, &__fResponse); err != nil {
+		return err
+	}
 
-	fmt.Println(str3)
+	//等待一段时间后，尝试连接数据库来确认是否安装完毕
+	time.Sleep(120 * time.Second)
+	db, err := sql.Open("mysql", "root@tcp("+__fResponse.FloatingIp.FloatingIp+":3306)/mysql?charset=utf8mb4")
+	if err != nil {
+		fmt.Println("创建数据库对象失败")
+		return
+	}
+	defer db.Close() // 延迟关闭 db对象创建成功后才可以调用close方法
+
+	// 实际去尝试连接数据库
+	for {
+		err = db.Ping()
+		if err != nil {
+			fmt.Println("连接数据库失败")
+			return
+		} else {
+			break
+		}
+	}
+
+	//修改并生成slave启动脚本
+	base.ModifySlaveScript(m.VMRootPassword, m.MysqlRootPassword, master_addr.(string))
+	//拉起备mysql虚拟机
+	slave_id := base.CreateMysql(provider, "slave.txt", m.FlavorID, m.ImageID, m.NetworkID)
+	//获取虚拟机IP,MAC
+LOOP2:
+	slave_ip := base.GetServerIP(provider, slave_id)
+	slave_detail := *slave_ip
+	if slave_detail.Status != "ACTIVE" {
+		time.Sleep(5 * time.Second)
+		goto LOOP2
+	}
+	slave_addr := slave_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
+	slave_mac_addr := slave_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
 
 	return c.String(http.StatusOK, master_addr.(string)+"  "+master_mac_addr.(string)+"  "+slave_addr.(string)+"  "+slave_mac_addr.(string))
 }

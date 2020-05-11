@@ -3,6 +3,7 @@ package controllers
 //构造的结构体，对应http请求参数
 
 type MsgMysqlCluster struct {
+	OpenstackIP       string `json:"op_ip" form:"op_ip" query:"op_ip"`
 	Username          string `json:"username" form:"username" query:"username"`
 	Password          string `json:"password" form:"password" query:"password"`
 	DomainName        string `json:"domain_name" form:"domain_name" query:"domain_name"`
@@ -11,6 +12,7 @@ type MsgMysqlCluster struct {
 	MysqlRootPassword string `json:"mysql_root_password" form:"mysql_root_password" query:"mysql_root_password"`
 	NetworkID         string `json:"net_id" form:"net_id" query:"net_id"`
 	NetworkName       string `json:"net_name" form:"net_name" query:"net_name"`
+	FloatingNetworkID string `json:"f_net_id" form:"f_net_id" query:"f_net_id"`
 	FlavorID          string `json:"flavor_id" form:"flavor_id" query:"flavor_id"`
 	ImageID           string `json:"image_id" form:"image_id" query:"image_id"`
 }
@@ -21,16 +23,18 @@ header:
 Content-Type:application/json
 body:
 {
-  "username":"admin",
-  "password":"3Fu6^JZ$JOaKuBRW",
+  "op_ip":"10.10.191.250",
+  "username":"yunwei",
+  "password":"Cs_k0lla_!23",
   "domain_name":"default",
-  "tenant_id":"d570f18995794b428ce68464b3a870f7",
+  "tenant_id":"88434702de204a568204bd5d1c9236d0",
   "vm_root_password":"root",
   "mysql_root_password":"root",
-  "net_id":"2a8e355c-254e-4538-ab08-61a99c1da548",
-  "net_name":"test_net",
-  "flavor_id":"33d486b1-e550-4a9b-a950-e6efbf22c2a5",
-  "image_id":"ead8d78b-d7eb-47ff-844b-3381f230a75f"
+  "net_id":"71d7fca3-0de4-4a3b-8c83-6b63874c2912",
+  "net_name":"zhujj_net",
+  "f_net_id":"79ef3620-2fb2-4fa4-82a7-fbbd42243b4d"
+  "flavor_id":"",
+  "image_id":""
 }
 */
 
