@@ -95,7 +95,7 @@ LOOP3:
 	password := m.Password
 	domainname := m.DomainName
 	url := "http://" + m.OpenstackIP + ":5000/v3/auth/tokens"
-	reqbody := "{\"auth\": {\"identity\": {\"methods\": [\"password\"],\"password\": {\"user\": {\"name\": \"" + username + "\",\"domain\": {\"name\": \"" + domainname + "\"},\"password\": \"" + password + "\"}}}}}"
+	reqbody := `{"auth": {"identity": {"methods": ["password"],"password": {"user": {"name": "` + username + `","domain": {"name": "` + domainname + `"},"password": "` + password + `"}}}}}`
 
 	var jsonStr1 = []byte(reqbody)
 

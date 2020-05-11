@@ -18,10 +18,13 @@
 高性能，编码极简，高扩展性，极轻量级
 
 # 自动化业务逻辑
-由财哥制作的新镜像，更新启动逻辑
-编辑主mysql节点启动文件-->拉起主mysql节点，等待其安装配置完成-->获取其IP-->编辑备mysql节点启动文件-->拉起备用mysql节点，等待其安装配置完成-->获取其IP-->返回节点内部IP-->(可选)配置浮动IP给主/备节点
-
-其中绑定浮动IP没有可用的API，需构造新的http请求进行资源创建，分为以下几步：
-1.获取token(返回token字符串)---完成
-2.通过mac获取port-id(返回port id) /v2.0/ports?mac_address=xxxxxx&fields=id ---完成
-3.创建floating ip并绑定port(返回floating ip) ---待完成
+由财哥制作的新镜像，更新启动逻辑  
+编辑主mysql节点启动文件-->拉起主mysql节点，等待其安装配置完成-->获取其IP-->编辑备mysql节点启动文件-->拉起备用mysql节点，等待其安装配置完成-->获取其IP-->返回节点内部IP-->(可选)配置浮动IP给主/备节点  
+  
+其中绑定浮动IP没有可用的API，需构造新的http请求进行资源创建，分为以下几步：  
+1.获取token(返回token字符串)---完成  
+2.通过mac获取port-id(返回port id) /v2.0/ports?mac_address=xxxxxx&fields=id ---完成  
+3.创建floating ip并绑定port(返回floating ip) ---待完成  
+  
+由俊哥制作CDH镜像，启动逻辑如下：  
+启动server-->启动若干agent-->获取主机名和IP-->编辑hosts文件-->配置浮动IP-->上传hosts文件-->执行磁盘扩容脚本-->执行安装脚本-->服务启动完成  
