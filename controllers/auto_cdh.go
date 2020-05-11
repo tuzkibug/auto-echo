@@ -36,11 +36,11 @@ func BuilCDHCluster(c echo.Context) (err error) {
 	}
 
 	//拉起server虚拟机
-	server_id := base.CreateCDHServer(provider, m.FlavorID, m.ServerImageID, m.NetworkID)
+	server_id := base.CreateCDHServer(provider, m.ServerFlavorID, m.ServerImageID, m.NetworkID)
 	//拉起agent虚拟机
-	agent1_id := base.CreateCDHAgent(provider, m.FlavorID, m.AgentImageID, m.NetworkID)
-	agent2_id := base.CreateCDHAgent(provider, m.FlavorID, m.AgentImageID, m.NetworkID)
-	agent3_id := base.CreateCDHAgent(provider, m.FlavorID, m.AgentImageID, m.NetworkID)
+	agent1_id := base.CreateCDHAgent(provider, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
+	agent2_id := base.CreateCDHAgent(provider, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
+	agent3_id := base.CreateCDHAgent(provider, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
 
 	//获取server虚拟机IP,MAC
 LOOP0:
@@ -151,11 +151,11 @@ LOOP3:
 
 	body3, _ := ioutil.ReadAll(resp3.Body)
 
-	__fResponse := FIP{}
-	if err := json.Unmarshal(body3, &__fResponse); err != nil {
+	__serverfResponse := FIP{}
+	if err := json.Unmarshal(body3, &__serverfResponse); err != nil {
 		return err
 	}
-	fmt.Println(__fResponse.FloatingIp.FloatingIp)
+	fmt.Println(__serverfResponse.FloatingIp.FloatingIp)
 
 	//通过mac地址获取agent1虚拟机port_id
 	port_url = "http://" + m.OpenstackIP + ":9696/v2.0/ports?mac_address=" + agent1_mac_addr.(string) + "&fields=id"
@@ -184,11 +184,11 @@ LOOP3:
 	}
 	defer resp3.Body.Close()
 	body3, _ = ioutil.ReadAll(resp3.Body)
-	__fResponse = FIP{}
-	if err = json.Unmarshal(body3, &__fResponse); err != nil {
+	__a1fResponse := FIP{}
+	if err = json.Unmarshal(body3, &__a1fResponse); err != nil {
 		return err
 	}
-	fmt.Println(__fResponse.FloatingIp.FloatingIp)
+	fmt.Println(__a1fResponse.FloatingIp.FloatingIp)
 
 	//通过mac地址获取agent2虚拟机port_id
 	port_url = "http://" + m.OpenstackIP + ":9696/v2.0/ports?mac_address=" + agent2_mac_addr.(string) + "&fields=id"
@@ -217,11 +217,11 @@ LOOP3:
 	}
 	defer resp3.Body.Close()
 	body3, _ = ioutil.ReadAll(resp3.Body)
-	__fResponse = FIP{}
-	if err = json.Unmarshal(body3, &__fResponse); err != nil {
+	__a2fResponse := FIP{}
+	if err = json.Unmarshal(body3, &__a2fResponse); err != nil {
 		return err
 	}
-	fmt.Println(__fResponse.FloatingIp.FloatingIp)
+	fmt.Println(__a2fResponse.FloatingIp.FloatingIp)
 
 	//通过mac地址获取agent3虚拟机port_id
 	port_url = "http://" + m.OpenstackIP + ":9696/v2.0/ports?mac_address=" + agent3_mac_addr.(string) + "&fields=id"
@@ -250,11 +250,70 @@ LOOP3:
 	}
 	defer resp3.Body.Close()
 	body3, _ = ioutil.ReadAll(resp3.Body)
-	__fResponse = FIP{}
-	if err = json.Unmarshal(body3, &__fResponse); err != nil {
+	__a3fResponse := FIP{}
+	if err = json.Unmarshal(body3, &__a3fResponse); err != nil {
 		return err
 	}
-	fmt.Println(__fResponse.FloatingIp.FloatingIp)
+	fmt.Println(__a3fResponse.FloatingIp.FloatingIp)
 
-	return c.String(http.StatusOK, server_addr.(string)+" "+server_mac_addr.(string)+" "+agent1_addr.(string)+" "+agent1_mac_addr.(string)+" "+agent2_addr.(string)+" "+agent2_mac_addr.(string)+" "+agent3_addr.(string)+" "+agent3_mac_addr.(string))
+	//分别执行脚本
+	cdhuser := "root"
+	cdhpassword := "Admin123456"
+	ciphers := []string{}
+	cmdstr := "./extend_root_xfs.sh"
+	//server分区扩容
+LOOP4:
+	session, err := base.Sshconnect(cdhuser, cdhpassword, __serverfResponse.FloatingIp.FloatingIp, "", 22, ciphers)
+	if err != nil {
+		time.Sleep(5 * time.Second)
+		goto LOOP4
+	}
+	defer session.Close()
+	var serverstdoutBuf bytes.Buffer
+	session.Stdout = &serverstdoutBuf
+	session.Run(cmdstr)
+	session.Run("df -h")
+
+	//agent1分区扩容
+LOOP5:
+	a1session, err := base.Sshconnect(cdhuser, cdhpassword, __a1fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
+	if err != nil {
+		time.Sleep(5 * time.Second)
+		goto LOOP5
+	}
+	defer a1session.Close()
+	var a1stdoutBuf bytes.Buffer
+	a1session.Stdout = &a1stdoutBuf
+	a1session.Run(cmdstr)
+	a1session.Run("df -h")
+
+	//agent2分区扩容
+LOOP6:
+	a2session, err := base.Sshconnect(cdhuser, cdhpassword, __a2fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
+	if err != nil {
+		time.Sleep(5 * time.Second)
+		goto LOOP6
+	}
+	defer a2session.Close()
+	var a2stdoutBuf bytes.Buffer
+	a2session.Stdout = &a2stdoutBuf
+	a2session.Run(cmdstr)
+	a2session.Run("df -h")
+
+	//agent3分区扩容
+LOOP7:
+	a3session, err := base.Sshconnect(cdhuser, cdhpassword, __a3fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
+	if err != nil {
+		time.Sleep(5 * time.Second)
+		goto LOOP7
+	}
+	defer a3session.Close()
+	var a3stdoutBuf bytes.Buffer
+	a3session.Stdout = &a3stdoutBuf
+	a3session.Run(cmdstr)
+	a3session.Run("df -h")
+
+	return c.String(http.StatusOK, "OK")
+
+	//return c.String(http.StatusOK, server_addr.(string)+" "+server_mac_addr.(string)+" "+agent1_addr.(string)+" "+agent1_mac_addr.(string)+" "+agent2_addr.(string)+" "+agent2_mac_addr.(string)+" "+agent3_addr.(string)+" "+agent3_mac_addr.(string))
 }

@@ -188,7 +188,8 @@ type MsgCDHCluster struct {
 	NetworkID         string `json:"net_id" form:"net_id" query:"net_id"`
 	NetworkName       string `json:"net_name" form:"net_name" query:"net_name"`
 	FloatingNetworkID string `json:"f_net_id" form:"f_net_id" query:"f_net_id"`
-	FlavorID          string `json:"flavor_id" form:"flavor_id" query:"flavor_id"`
+	ServerFlavorID    string `json:"s_flavor_id" form:"s_flavor_id" query:"s_flavor_id"`
+	AgentFlavorID     string `json:"a_flavor_id" form:"a_flavor_id" query:"a_flavor_id"`
 	ServerImageID     string `json:"server_image_id" form:"server_image_id" query:"server_image_id"`
 	AgentImageID      string `json:"agent_image_id" form:"agent_image_id" query:"agent_image_id"`
 	//SeverNum    string `json:"server_num" form:"server_num" query:"server_num"`
@@ -209,7 +210,8 @@ body:
   "net_id":"71d7fca3-0de4-4a3b-8c83-6b63874c2912",
   "net_name":"zhujj_net",
   "f_net_id":"79ef3620-2fb2-4fa4-82a7-fbbd42243b4d",
-  "flavor_id":"4c52ae46-88a3-4946-b749-71cd40f211da",
+  "s_flavor_id":"57431ed0-7f89-4c97-bb28-c2e894bcb442",
+  "a_flavor_id":"4c52ae46-88a3-4946-b749-71cd40f211da",
   "server_image_id":"aafe0a95-42ca-4690-9dbe-e1924bac3941",
   "agent_image_id":"e169da6d-c5e9-4f8f-9c3f-74b0bd03e9d9"
 }
@@ -247,3 +249,7 @@ type FIP_detail struct {
 type FIP struct {
 	FloatingIp FIP_detail `json:"floatingip" form:"floatingip" query:"floatingip"`
 }
+
+/*
+获取浮动IP时，[]byte转json结构体需要使用的结构
+*/
