@@ -9,7 +9,7 @@ import (
 )
 
 /*
-随机生成哈希字符串
+随机生成哈希字符串作为mysql虚拟机名称
 */
 
 func CreateRandom() string {

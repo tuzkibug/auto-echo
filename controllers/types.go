@@ -32,9 +32,9 @@ body:
   "mysql_root_password":"root",
   "net_id":"71d7fca3-0de4-4a3b-8c83-6b63874c2912",
   "net_name":"zhujj_net",
-  "f_net_id":"79ef3620-2fb2-4fa4-82a7-fbbd42243b4d"
-  "flavor_id":"",
-  "image_id":""
+  "f_net_id":"79ef3620-2fb2-4fa4-82a7-fbbd42243b4d",
+  "flavor_id":"bdd9f1f1-a665-4b31-aacc-33eb1c7c6208",
+  "image_id":"2b2682e3-ab47-4703-b502-022b241c658b"
 }
 */
 

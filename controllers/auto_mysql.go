@@ -56,7 +56,7 @@ LOOP1:
 	password := m.Password
 	domainname := m.DomainName
 	url := "http://" + m.OpenstackIP + ":5000/v3/auth/tokens"
-	reqbody := "{\"auth\": {\"identity\": {\"methods\": [\"password\"],\"password\": {\"user\": {\"name\": \"" + username + "\",\"domain\": {\"name\": \"" + domainname + "\"},\"password\": \"" + password + "\"}}}}}"
+	reqbody := `{"auth": {"identity": {"methods": ["password"],"password": {"user": {"name": "` + username + `","domain": {"name": "` + domainname + `"},"password": "` + password + `"}}}}}`
 
 	var jsonStr1 = []byte(reqbody)
 	fmt.Println("jsonStr", jsonStr1)
@@ -74,7 +74,7 @@ LOOP1:
 	defer resp.Body.Close()
 
 	token := resp.Header.Get("X-Subject-Token")
-	fmt.Println(token)
+	//fmt.Println(token)
 
 	//通过mac地址获取主mysql虚拟机port_id
 	//mac := "fa:16:3e:aa:a4:8a"
@@ -101,7 +101,7 @@ LOOP1:
 
 	port_id := str[17:53]
 
-	fmt.Println(port_id)
+	//fmt.Println(port_id)
 
 	//绑定浮动IP
 	//api地址/v2.0/floatingips
@@ -128,8 +128,8 @@ LOOP1:
 	}
 
 	//等待一段时间后，尝试连接数据库来确认是否安装完毕
-	time.Sleep(120 * time.Second)
-	db, err := sql.Open("mysql", "root@tcp("+__fResponse.FloatingIp.FloatingIp+":3306)/mysql?charset=utf8mb4")
+	time.Sleep(100 * time.Second)
+	db, err := sql.Open("mysql", "root:"+m.MysqlRootPassword+"@tcp("+__fResponse.FloatingIp.FloatingIp+":3306)/mysql?charset=utf8")
 	if err != nil {
 		fmt.Println("创建数据库对象失败")
 		return
@@ -138,11 +138,10 @@ LOOP1:
 
 	// 实际去尝试连接数据库
 	for {
+		err = nil
 		err = db.Ping()
-		if err != nil {
-			fmt.Println("连接数据库失败")
-			return
-		} else {
+		if err == nil {
+			fmt.Println("连接数据库主节点成功")
 			break
 		}
 	}
@@ -161,6 +160,7 @@ LOOP2:
 	}
 	slave_addr := slave_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
 	slave_mac_addr := slave_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
+	fmt.Println(slave_addr.(string) + " " + slave_mac_addr.(string))
 
-	return c.String(http.StatusOK, master_addr.(string)+"  "+master_mac_addr.(string)+"  "+slave_addr.(string)+"  "+slave_mac_addr.(string))
+	return c.String(http.StatusOK, __fResponse.FloatingIp.FloatingIp+" "+"3306"+" "+"root"+m.MysqlRootPassword)
 }
