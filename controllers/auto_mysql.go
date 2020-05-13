@@ -144,6 +144,7 @@ LOOP1:
 			fmt.Println("连接数据库主节点成功")
 			break
 		}
+		time.Sleep(10 * time.Second)
 	}
 
 	//修改并生成slave启动脚本

@@ -442,18 +442,18 @@ LOOP11:
 	a3session.Run(a3cmdstr)
 	fmt.Println("agent3执行安装完成")
 
-	//等待重启完成，检查端口开放情况
+	//等待重启完成，检查页面访问情况
 LOOP12:
-	session, err = base.Sshconnect(cdhuser, cdhpassword, __serverfResponse.FloatingIp.FloatingIp, "", 22, ciphers)
+	testresp, err := http.Get("http://" + __serverfResponse.FloatingIp.FloatingIp + ":7180/cmf")
 	if err != nil {
-		fmt.Println("重启后，server连接失败，请稍后")
-		time.Sleep(5 * time.Second)
+		fmt.Println(err)
+		time.Sleep(30 * time.Second)
 		goto LOOP12
 	}
-	defer session.Close()
-	var serverstdoutBuf3 bytes.Buffer
-	session.Stdout = &serverstdoutBuf3
-	session.Run("netstat -anp | grep 7180")
+	defer testresp.Body.Close()
+	testbody, err := ioutil.ReadAll(testresp.Body)
+	fmt.Println(string(testbody))
+	fmt.Println("服务启动成功")
 
 	return c.String(http.StatusOK, __serverfResponse.FloatingIp.FloatingIp+":7180")
 
