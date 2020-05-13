@@ -41,7 +41,12 @@ func BuilMysqlCluster(c echo.Context) (err error) {
 	//拉起主mysql虚拟机
 	master_id := base.CreateMysql(provider, "master.txt", m.FlavorID, m.ImageID, m.NetworkID)
 	//获取虚拟机IP,MAC
+	i := 0
 LOOP1:
+	if i == 49 {
+		return c.String(http.StatusNotFound, "无法获取虚拟机信息，请检查虚拟机是否正常启动")
+	}
+	i++
 	master_ip := base.GetServerIP(provider, master_id)
 	master_detail := *master_ip
 	if master_detail.Status != "ACTIVE" {
@@ -59,8 +64,8 @@ LOOP1:
 	reqbody := `{"auth": {"identity": {"methods": ["password"],"password": {"user": {"name": "` + username + `","domain": {"name": "` + domainname + `"},"password": "` + password + `"}}}}}`
 
 	var jsonStr1 = []byte(reqbody)
-	fmt.Println("jsonStr", jsonStr1)
-	fmt.Println("new_str", bytes.NewBuffer(jsonStr1))
+	//fmt.Println("jsonStr", jsonStr1)
+	//fmt.Println("new_str", bytes.NewBuffer(jsonStr1))
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr1))
 
@@ -80,7 +85,7 @@ LOOP1:
 	//mac := "fa:16:3e:aa:a4:8a"
 
 	port_url := "http://" + m.OpenstackIP + ":9696/v2.0/ports?mac_address=" + master_mac_addr.(string) + "&fields=id"
-	fmt.Println(port_url)
+	//fmt.Println(port_url)
 
 	var jsonStr2 = []byte("")
 
@@ -137,13 +142,18 @@ LOOP1:
 	defer db.Close() // 延迟关闭 db对象创建成功后才可以调用close方法
 
 	// 实际去尝试连接数据库
-	for {
+	for i := 0; i < 50; i++ {
+		if i == 49 {
+			fmt.Println("主节点连接异常，请检查")
+			return c.String(http.StatusOK, "主节点连接异常，请检查")
+		}
 		err = nil
 		err = db.Ping()
 		if err == nil {
 			fmt.Println("连接数据库主节点成功")
 			break
 		}
+		fmt.Println("暂无法连接数据库主节点，请稍后")
 		time.Sleep(10 * time.Second)
 	}
 
@@ -152,7 +162,12 @@ LOOP1:
 	//拉起备mysql虚拟机
 	slave_id := base.CreateMysql(provider, "slave.txt", m.FlavorID, m.ImageID, m.NetworkID)
 	//获取虚拟机IP,MAC
+	j := 0
 LOOP2:
+	if j == 49 {
+		return c.String(http.StatusNotFound, "无法获取虚拟机信息，请检查虚拟机是否正常启动")
+	}
+	j++
 	slave_ip := base.GetServerIP(provider, slave_id)
 	slave_detail := *slave_ip
 	if slave_detail.Status != "ACTIVE" {
@@ -163,5 +178,5 @@ LOOP2:
 	slave_mac_addr := slave_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
 	fmt.Println(slave_addr.(string) + " " + slave_mac_addr.(string))
 
-	return c.String(http.StatusOK, __fResponse.FloatingIp.FloatingIp+" "+"3306"+" "+"root"+m.MysqlRootPassword)
+	return c.String(http.StatusOK, __fResponse.FloatingIp.FloatingIp+" "+"3306"+" "+"root "+m.MysqlRootPassword)
 }

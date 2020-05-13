@@ -48,10 +48,16 @@ func BuilCDHCluster(c echo.Context) (err error) {
 	agent3_id := base.CreateCDHAgent(provider, a3_name, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
 
 	//获取server虚拟机IP,MAC
+	s_count := 0
 LOOP0:
+	if s_count == 49 {
+		return c.String(http.StatusNotFound, "无法获取虚拟机信息，请检查虚拟机是否正常启动")
+	}
+	s_count++
 	server_ip := base.GetServerIP(provider, server_id)
 	server_detail := *server_ip
 	if server_detail.Status != "ACTIVE" {
+		fmt.Println("等待虚拟机启动，请稍后")
 		time.Sleep(5 * time.Second)
 		goto LOOP0
 	}
@@ -60,30 +66,48 @@ LOOP0:
 	server_mac_addr := server_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
 
 	//获取agent虚拟机IP,MAC
+	a1_count := 0
 LOOP1:
+	if a1_count == 49 {
+		return c.String(http.StatusNotFound, "无法获取虚拟机信息，请检查虚拟机是否正常启动")
+	}
+	a1_count++
 	agent1_ip := base.GetServerIP(provider, agent1_id)
 	agent1_detail := *agent1_ip
 	if agent1_detail.Status != "ACTIVE" {
+		fmt.Println("等待虚拟机启动，请稍后")
 		time.Sleep(5 * time.Second)
 		goto LOOP1
 	}
 	agent1_addr := agent1_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
 	agent1_mac_addr := agent1_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
 
+	a2_count := 0
 LOOP2:
+	if a2_count == 49 {
+		return c.String(http.StatusNotFound, "无法获取虚拟机信息，请检查虚拟机是否正常启动")
+	}
+	a2_count++
 	agent2_ip := base.GetServerIP(provider, agent2_id)
 	agent2_detail := *agent2_ip
 	if agent2_detail.Status != "ACTIVE" {
+		fmt.Println("等待虚拟机启动，请稍后")
 		time.Sleep(5 * time.Second)
 		goto LOOP2
 	}
 	agent2_addr := agent2_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
 	agent2_mac_addr := agent2_detail.Addresses[m.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
 
+	a3_count := 0
 LOOP3:
+	if a3_count == 49 {
+		return c.String(http.StatusNotFound, "无法获取虚拟机信息，请检查虚拟机是否正常启动")
+	}
+	a3_count++
 	agent3_ip := base.GetServerIP(provider, agent3_id)
 	agent3_detail := *agent3_ip
 	if agent3_detail.Status != "ACTIVE" {
+		fmt.Println("等待虚拟机启动，请稍后")
 		time.Sleep(5 * time.Second)
 		goto LOOP3
 	}
@@ -267,7 +291,12 @@ LOOP3:
 	ciphers := []string{}
 
 	//server删除hosts文件
+	ss_count := 0
 LOOP4:
+	if ss_count == 49 {
+		return c.String(http.StatusNotFound, "无法连接至server虚拟机，请检查")
+	}
+	ss_count++
 	session, err := base.Sshconnect(cdhuser, cdhpassword, __serverfResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
 		time.Sleep(5 * time.Second)
@@ -279,7 +308,12 @@ LOOP4:
 	session.Run("rm -rf /etc/hosts")
 
 	//agent1删除hosts文件
+	a1s_count := 0
 LOOP5:
+	if a1s_count == 49 {
+		return c.String(http.StatusNotFound, "无法连接至agent001虚拟机，请检查")
+	}
+	a1s_count++
 	a1session, err := base.Sshconnect(cdhuser, cdhpassword, __a1fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
 		time.Sleep(5 * time.Second)
@@ -291,7 +325,12 @@ LOOP5:
 	a1session.Run("rm -rf /etc/hosts")
 
 	//agent2删除hosts文件
+	a2s_count := 0
 LOOP6:
+	if a2s_count == 49 {
+		return c.String(http.StatusNotFound, "无法连接至agent002虚拟机，请检查")
+	}
+	a2s_count++
 	a2session, err := base.Sshconnect(cdhuser, cdhpassword, __a2fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
 		time.Sleep(5 * time.Second)
@@ -303,7 +342,12 @@ LOOP6:
 	a2session.Run("rm -rf /etc/hosts")
 
 	//agent3删除hosts文件
+	a3s_count := 0
 LOOP7:
+	if a3s_count == 49 {
+		return c.String(http.StatusNotFound, "无法连接至agent003虚拟机，请检查")
+	}
+	a3s_count++
 	a3session, err := base.Sshconnect(cdhuser, cdhpassword, __a3fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
 		time.Sleep(5 * time.Second)
@@ -372,8 +416,12 @@ LOOP7:
 
 	//server执行安装脚本
 	scmdstr := "/root/Config_CM_Server_arg.sh 1 " + server_name
-
+	ss_count = 0
 LOOP8:
+	if ss_count == 49 {
+		return c.String(http.StatusNotFound, "无法连接至server虚拟机，请检查")
+	}
+	ss_count++
 	session, err = base.Sshconnect(cdhuser, cdhpassword, __serverfResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
 		fmt.Println("server连接失败，请稍后")
@@ -390,8 +438,12 @@ LOOP8:
 
 	//a1执行安装脚本
 	a1cmdstr := "/root/Config_CM_Agent_arg.sh 1 " + server_name + " " + a1_name
-
+	a1s_count = 0
 LOOP9:
+	if a1s_count == 49 {
+		return c.String(http.StatusNotFound, "无法连接至agent001虚拟机，请检查")
+	}
+	a1s_count++
 	a1session, err = base.Sshconnect(cdhuser, cdhpassword, __a1fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
 		fmt.Println("agent1连接失败，请稍后")
@@ -408,8 +460,12 @@ LOOP9:
 
 	//a2执行安装脚本
 	a2cmdstr := "/root/Config_CM_Agent_arg.sh 1 " + server_name + " " + a2_name
-
+	a2s_count = 0
 LOOP10:
+	if a2s_count == 49 {
+		return c.String(http.StatusNotFound, "无法连接至agent002虚拟机，请检查")
+	}
+	a2s_count++
 	a2session, err = base.Sshconnect(cdhuser, cdhpassword, __a2fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
 		fmt.Println("agent2连接失败，请稍后")
@@ -426,8 +482,12 @@ LOOP10:
 
 	//a3执行安装脚本
 	a3cmdstr := "/root/Config_CM_Agent_arg.sh 1 " + server_name + " " + a3_name
-
+	a3s_count = 0
 LOOP11:
+	if a3s_count == 49 {
+		return c.String(http.StatusNotFound, "无法连接至agent003虚拟机，请检查")
+	}
+	a3s_count++
 	a3session, err = base.Sshconnect(cdhuser, cdhpassword, __a3fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
 		fmt.Println("agent3连接失败，请稍后")
@@ -443,11 +503,16 @@ LOOP11:
 	fmt.Println("agent3执行安装完成")
 
 	//等待重启完成，检查页面访问情况
+	resp_count := 0
 LOOP12:
+	if resp_count == 49 {
+		return c.String(http.StatusNotFound, "无法访问CM页面，请检查")
+	}
+	resp_count++
 	testresp, err := http.Get("http://" + __serverfResponse.FloatingIp.FloatingIp + ":7180/cmf")
 	if err != nil {
 		fmt.Println(err)
-		time.Sleep(30 * time.Second)
+		time.Sleep(10 * time.Second)
 		goto LOOP12
 	}
 	defer testresp.Body.Close()
