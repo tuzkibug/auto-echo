@@ -15,7 +15,7 @@ import (
 	"github.com/tuzkibug/auto-echo/base"
 )
 
-//自动化部署mysql主备集群
+//自动化部署CDH集群
 
 func BuilCDHCluster(c echo.Context) (err error) {
 	m := new(MsgCDHCluster)
@@ -37,14 +37,14 @@ func BuilCDHCluster(c echo.Context) (err error) {
 	}
 
 	//拉起server虚拟机
-	server_name := base.CreateCDHServerName()
+	server_name := base.CreateCDHServerName() + "001"
 	server_id := base.CreateCDHServer(provider, server_name, m.ServerFlavorID, m.ServerImageID, m.NetworkID)
 	//拉起agent虚拟机
-	a1_name := base.CreateCDHAgentName()
+	a1_name := base.CreateCDHAgentName() + "001"
 	agent1_id := base.CreateCDHAgent(provider, a1_name, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
-	a2_name := base.CreateCDHAgentName()
+	a2_name := base.CreateCDHAgentName() + "002"
 	agent2_id := base.CreateCDHAgent(provider, a2_name, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
-	a3_name := base.CreateCDHAgentName()
+	a3_name := base.CreateCDHAgentName() + "003"
 	agent3_id := base.CreateCDHAgent(provider, a3_name, m.AgentFlavorID, m.AgentImageID, m.NetworkID)
 
 	//获取server虚拟机IP,MAC
@@ -265,8 +265,8 @@ LOOP3:
 	cdhuser := "root"
 	cdhpassword := "Admin123456"
 	ciphers := []string{}
-	cmdstr := "./extend_root_xfs.sh"
-	//server分区扩容
+
+	//server删除hosts文件
 LOOP4:
 	session, err := base.Sshconnect(cdhuser, cdhpassword, __serverfResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
@@ -276,10 +276,9 @@ LOOP4:
 	defer session.Close()
 	var serverstdoutBuf bytes.Buffer
 	session.Stdout = &serverstdoutBuf
-	session.Run(cmdstr)
 	session.Run("rm -rf /etc/hosts")
 
-	//agent1分区扩容
+	//agent1删除hosts文件
 LOOP5:
 	a1session, err := base.Sshconnect(cdhuser, cdhpassword, __a1fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
@@ -289,10 +288,9 @@ LOOP5:
 	defer a1session.Close()
 	var a1stdoutBuf bytes.Buffer
 	a1session.Stdout = &a1stdoutBuf
-	a1session.Run(cmdstr)
 	a1session.Run("rm -rf /etc/hosts")
 
-	//agent2分区扩容
+	//agent2删除hosts文件
 LOOP6:
 	a2session, err := base.Sshconnect(cdhuser, cdhpassword, __a2fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
@@ -302,10 +300,9 @@ LOOP6:
 	defer a2session.Close()
 	var a2stdoutBuf bytes.Buffer
 	a2session.Stdout = &a2stdoutBuf
-	a2session.Run(cmdstr)
 	a2session.Run("rm -rf /etc/hosts")
 
-	//agent3分区扩容
+	//agent3删除hosts文件
 LOOP7:
 	a3session, err := base.Sshconnect(cdhuser, cdhpassword, __a3fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
 	if err != nil {
@@ -315,7 +312,7 @@ LOOP7:
 	defer a3session.Close()
 	var a3stdoutBuf bytes.Buffer
 	a3session.Stdout = &a3stdoutBuf
-	a3session.Run(cmdstr)
+	//a3session.Run(cmdstr)
 	a3session.Run("rm -rf /etc/hosts")
 
 	//编辑etc/hosts文件
@@ -373,7 +370,92 @@ LOOP7:
 	}
 	base.UploadFile(sftpClient, "hosts", "/etc/")
 
-	return c.String(http.StatusOK, "OK")
+	//server执行安装脚本
+	scmdstr := "/root/Config_CM_Server_arg.sh 1 " + server_name
+
+LOOP8:
+	session, err = base.Sshconnect(cdhuser, cdhpassword, __serverfResponse.FloatingIp.FloatingIp, "", 22, ciphers)
+	if err != nil {
+		fmt.Println("server连接失败，请稍后")
+		time.Sleep(5 * time.Second)
+		goto LOOP8
+	}
+	defer session.Close()
+	var serverstdoutBuf2 bytes.Buffer
+	session.Stdout = &serverstdoutBuf2
+	fmt.Println(scmdstr)
+
+	session.Run(scmdstr)
+	fmt.Println("server执行安装完成")
+
+	//a1执行安装脚本
+	a1cmdstr := "/root/Config_CM_Agent_arg.sh 1 " + server_name + " " + a1_name
+
+LOOP9:
+	a1session, err = base.Sshconnect(cdhuser, cdhpassword, __a1fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
+	if err != nil {
+		fmt.Println("agent1连接失败，请稍后")
+		time.Sleep(5 * time.Second)
+		goto LOOP9
+	}
+	defer a1session.Close()
+	var a1stdoutBuf2 bytes.Buffer
+	a1session.Stdout = &a1stdoutBuf2
+	fmt.Println(a1cmdstr)
+
+	a1session.Run(a1cmdstr)
+	fmt.Println("agent1执行安装完成")
+
+	//a2执行安装脚本
+	a2cmdstr := "/root/Config_CM_Agent_arg.sh 1 " + server_name + " " + a2_name
+
+LOOP10:
+	a2session, err = base.Sshconnect(cdhuser, cdhpassword, __a2fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
+	if err != nil {
+		fmt.Println("agent2连接失败，请稍后")
+		time.Sleep(5 * time.Second)
+		goto LOOP10
+	}
+	defer a1session.Close()
+	var a2stdoutBuf2 bytes.Buffer
+	a2session.Stdout = &a2stdoutBuf2
+	fmt.Println(a2cmdstr)
+
+	a2session.Run(a2cmdstr)
+	fmt.Println("agent2执行安装完成")
+
+	//a3执行安装脚本
+	a3cmdstr := "/root/Config_CM_Agent_arg.sh 1 " + server_name + " " + a3_name
+
+LOOP11:
+	a3session, err = base.Sshconnect(cdhuser, cdhpassword, __a3fResponse.FloatingIp.FloatingIp, "", 22, ciphers)
+	if err != nil {
+		fmt.Println("agent3连接失败，请稍后")
+		time.Sleep(5 * time.Second)
+		goto LOOP11
+	}
+	defer a3session.Close()
+	var a3stdoutBuf2 bytes.Buffer
+	a3session.Stdout = &a3stdoutBuf2
+	fmt.Println(a3cmdstr)
+
+	a3session.Run(a3cmdstr)
+	fmt.Println("agent3执行安装完成")
+
+	//等待重启完成，检查端口开放情况
+LOOP12:
+	session, err = base.Sshconnect(cdhuser, cdhpassword, __serverfResponse.FloatingIp.FloatingIp, "", 22, ciphers)
+	if err != nil {
+		fmt.Println("重启后，server连接失败，请稍后")
+		time.Sleep(5 * time.Second)
+		goto LOOP12
+	}
+	defer session.Close()
+	var serverstdoutBuf3 bytes.Buffer
+	session.Stdout = &serverstdoutBuf3
+	session.Run("netstat -anp | grep 7180")
+
+	return c.String(http.StatusOK, __serverfResponse.FloatingIp.FloatingIp+":7180")
 
 	//return c.String(http.StatusOK, server_addr.(string)+" "+server_mac_addr.(string)+" "+agent1_addr.(string)+" "+agent1_mac_addr.(string)+" "+agent2_addr.(string)+" "+agent2_mac_addr.(string)+" "+agent3_addr.(string)+" "+agent3_mac_addr.(string))
 }

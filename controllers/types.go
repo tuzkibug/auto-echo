@@ -212,8 +212,8 @@ body:
   "f_net_id":"79ef3620-2fb2-4fa4-82a7-fbbd42243b4d",
   "s_flavor_id":"57431ed0-7f89-4c97-bb28-c2e894bcb442",
   "a_flavor_id":"4c52ae46-88a3-4946-b749-71cd40f211da",
-  "server_image_id":"aafe0a95-42ca-4690-9dbe-e1924bac3941",
-  "agent_image_id":"e169da6d-c5e9-4f8f-9c3f-74b0bd03e9d9"
+  "server_image_id":"f568ecb8-1370-4b24-96aa-58b313d2a124",
+  "agent_image_id":"c61efc43-b4c6-4c97-bd71-2ab4da856789"
 }
 */
 
