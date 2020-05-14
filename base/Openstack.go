@@ -2,6 +2,7 @@ package base
 
 import (
 	"fmt"
+	//"os"
 
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/openstack"
@@ -11,6 +12,7 @@ import (
 	"github.com/rackspace/gophercloud/openstack/networking/v2/networks"
 	"github.com/rackspace/gophercloud/openstack/networking/v2/subnets"
 	"github.com/rackspace/gophercloud/pagination"
+	log "github.com/sirupsen/logrus"
 )
 
 //openstack基本操作函数，包括拉起、查询等
@@ -25,7 +27,7 @@ func CreateMysql(provider *gophercloud.ProviderClient, filename string, flavorID
 	//读配置文件
 	file, err := ReadAll(filename)
 	if err != nil {
-		fmt.Printf("File read error : %v", err)
+		log.Error(err)
 		return
 	}
 	ss, err := servers.Create(client, servers.CreateOpts{
@@ -41,10 +43,9 @@ func CreateMysql(provider *gophercloud.ProviderClient, filename string, flavorID
 	}).Extract()
 
 	if err != nil {
-		fmt.Printf("Create : %v", err)
+		log.Error(err)
 		return
 	}
-	//fmt.Println(ss)
 	return ss.ID
 }
 
@@ -69,10 +70,9 @@ func CreateCDHServer(provider *gophercloud.ProviderClient, name string, flavorID
 	}).Extract()
 
 	if err != nil {
-		fmt.Printf("Create : %v", err)
+		log.Error(err)
 		return
 	}
-	//fmt.Println(ss)
 	return ss.ID
 }
 
@@ -97,7 +97,7 @@ func CreateCDHAgent(provider *gophercloud.ProviderClient, name string, flavorID 
 	}).Extract()
 
 	if err != nil {
-		fmt.Printf("Create : %v", err)
+		log.Error(err)
 		return
 	}
 	//fmt.Println(ss)
@@ -110,7 +110,7 @@ func GetServerIP(provider *gophercloud.ProviderClient, server_id string) (result
 		Region: "RegionOne",
 	})
 	if err != nil {
-		fmt.Printf("Get : %v", err)
+		log.Error(err)
 		return
 	}
 	server, _ := servers.Get(client, server_id).Extract()

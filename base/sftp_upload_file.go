@@ -1,13 +1,14 @@
 package base
 
 import (
-	"fmt"
+	//"fmt"
 	"io/ioutil"
 
 	"os"
 	"path"
 
 	"github.com/pkg/sftp"
+	log "github.com/sirupsen/logrus"
 )
 
 //SSH上传文件到指定路径
@@ -15,7 +16,7 @@ import (
 func UploadFile(sftpClient *sftp.Client, localFilePath string, remotePath string) {
 	srcFile, err := os.Open(localFilePath)
 	if err != nil {
-		fmt.Println("os.Open error : ", localFilePath)
+		log.Error("os.Open error : ", localFilePath)
 		return
 
 	}
@@ -25,7 +26,7 @@ func UploadFile(sftpClient *sftp.Client, localFilePath string, remotePath string
 
 	dstFile, err := sftpClient.Create(path.Join(remotePath, remoteFileName))
 	if err != nil {
-		fmt.Println("sftpClient.Create error : ", path.Join(remotePath, remoteFileName))
+		log.Error("sftpClient.Create error : ", path.Join(remotePath, remoteFileName))
 		return
 
 	}
@@ -33,10 +34,10 @@ func UploadFile(sftpClient *sftp.Client, localFilePath string, remotePath string
 
 	ff, err := ioutil.ReadAll(srcFile)
 	if err != nil {
-		fmt.Println("ReadAll error : ", localFilePath)
+		log.Error("ReadAll error : ", localFilePath)
 		return
 
 	}
 	dstFile.Write(ff)
-	fmt.Println(localFilePath + "  copy file to remote server finished!")
+	log.Info(localFilePath + " copy file to remote server finished!")
 }
