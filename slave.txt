@@ -15,4 +15,4 @@ sleep 30
 
 dbm-agent    --init-pwd 'root' init && \
 
-/usr/local/python3/bin/dbma-cli-build-slave --host=192.168.1.198 --port=3306 build-slave
+/usr/local/python3/bin/dbma-cli-build-slave --host=192.168.1.189 --port=3306 build-slave
