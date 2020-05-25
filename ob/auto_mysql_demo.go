@@ -153,7 +153,7 @@ func (mm *MysqlCluster) LinkTest(fip string) error {
 }
 
 //自动化部署mysql主备集群
-
+//主函数
 func BuildMysqlCluster(c echo.Context) (err error) {
 	m := new(MysqlCluster)
 	if err = c.Bind(m); err != nil {
