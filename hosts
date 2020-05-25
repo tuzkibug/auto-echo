@@ -1,7 +1,0 @@
-127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
-::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
-
-192.168.1.29 cdhserverncnl001
-192.168.1.75 cdhagenttidt001
-192.168.1.71 cdhagentfryn002
-192.168.1.25 cdhagenthlbp003

@@ -395,7 +395,7 @@ LOOP7:
 	base.ModifyEtcHosts(server_addr.(string), server_name, agent1_addr.(string), a1_name, agent2_addr.(string), a2_name, agent3_addr.(string), a3_name)
 	//sftp上传编辑后的文件到server虚拟机
 	var sftpClient *sftp.Client
-	sftpClient, err = connect(cdhuser, cdhpassword, __serverfResponse.FloatingIp.FloatingIp, 22)
+	sftpClient, err = Connect(cdhuser, cdhpassword, __serverfResponse.FloatingIp.FloatingIp, 22)
 	if err != nil {
 		log.Error(err)
 		return
@@ -410,7 +410,7 @@ LOOP7:
 	base.UploadFile(sftpClient, "hosts", "/etc/")
 
 	//sftp上传编辑后的文件到a1虚拟机
-	sftpClient, err = connect(cdhuser, cdhpassword, __a1fResponse.FloatingIp.FloatingIp, 22)
+	sftpClient, err = Connect(cdhuser, cdhpassword, __a1fResponse.FloatingIp.FloatingIp, 22)
 	if err != nil {
 		log.Error(err)
 		return
@@ -425,7 +425,7 @@ LOOP7:
 	base.UploadFile(sftpClient, "hosts", "/etc/")
 
 	//sftp上传编辑后的文件到a2虚拟机
-	sftpClient, err = connect(cdhuser, cdhpassword, __a2fResponse.FloatingIp.FloatingIp, 22)
+	sftpClient, err = Connect(cdhuser, cdhpassword, __a2fResponse.FloatingIp.FloatingIp, 22)
 	if err != nil {
 		log.Error(err)
 		return
@@ -440,7 +440,7 @@ LOOP7:
 	base.UploadFile(sftpClient, "hosts", "/etc/")
 
 	//sftp上传编辑后的文件到a3虚拟机
-	sftpClient, err = connect(cdhuser, cdhpassword, __a3fResponse.FloatingIp.FloatingIp, 22)
+	sftpClient, err = Connect(cdhuser, cdhpassword, __a3fResponse.FloatingIp.FloatingIp, 22)
 	if err != nil {
 		log.Error(err)
 		return

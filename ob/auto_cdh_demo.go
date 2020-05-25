@@ -3,6 +3,7 @@ package ob
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"strconv"
 
 	//"fmt"
@@ -17,7 +18,76 @@ import (
 	"github.com/rackspace/gophercloud/openstack"
 	log "github.com/sirupsen/logrus"
 	"github.com/tuzkibug/auto-echo/base"
+	"github.com/tuzkibug/auto-echo/controllers"
 )
+
+//定义CDH虚拟机对象，server和agent均属于该对象的实例
+type CDHVM struct {
+	role     string
+	username string
+	password string
+	ip       string
+	name     string
+	fip      string
+}
+
+//对象方法：追加文件信息
+func (cdh *CDHVM) AddInfo() {
+	str := []byte("\n" + cdh.ip + " " + cdh.name)
+
+	// 以追加模式打开文件
+	txt, err := os.OpenFile(`hosts`, os.O_APPEND, 0666)
+
+	defer txt.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	// 写入文件
+	n, err := txt.Write(str)
+	// 当 n != len(b) 时，返回非零错误
+	if err == nil && n != len(str) {
+		log.Error(`错误代码：`, n)
+		panic(err)
+	}
+}
+
+//对象方法：上传hosts新文件
+func (cdh *CDHVM) TransHosts() {
+	ciphers := []string{}
+	ss_count := 0
+LOOP4:
+	if ss_count == 49 {
+		log.Error("无法连接至server虚拟机，请检查")
+		return
+	}
+	ss_count++
+	session, err := base.Sshconnect(cdh.username, cdh.password, cdh.fip, "", 22, ciphers)
+	if err != nil {
+		log.Error(err)
+		time.Sleep(5 * time.Second)
+		goto LOOP4
+	}
+	defer session.Close()
+	var serverstdoutBuf bytes.Buffer
+	session.Stdout = &serverstdoutBuf
+	session.Run("rm -rf /etc/hosts")
+	log.Info(cdh.name + "删除初始/etc/hosts文件成功")
+
+	sftpClient, err := controllers.Connect(cdh.username, cdh.password, cdh.fip, 22)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	defer sftpClient.Close()
+
+	_, errStat := sftpClient.Stat("/etc/")
+	if errStat != nil {
+		log.Error(errStat)
+		return
+	}
+	base.UploadFile(sftpClient, "hosts", "/etc/")
+}
 
 //对象方法：创建server虚拟机
 func (dd *CDHCluster) CreateServerVM(provider *gophercloud.ProviderClient, no int, id chan string) {
@@ -111,9 +181,12 @@ func BuildCDHCluster(c echo.Context) (err error) {
 		return
 	}
 
-	//定义数组，存放server主机ID
+	//定义数组，存放server主机ID等信息
 	var ids1 []string
-	//定义channel提供并发
+	var names1 []string
+	var ips1 []string
+	var fips1 []string
+	//并发创建server虚拟机并记录id
 	idschs1 := make([]chan string, d.SeverNum)
 	for i := 0; i < d.SeverNum; i++ {
 		idschs1[i] = make(chan string)
@@ -129,15 +202,15 @@ LOOP0:
 	s_count := 0
 LOOP1:
 	if s_count == 49 {
-		log.Error("无法获取虚拟机信息，请检查虚拟机是否正常启动")
-		return c.String(http.StatusNotFound, "无法获取虚拟机信息，请检查虚拟机是否正常启动")
+		log.Error("无法获取虚拟机" + ids1[i] + "信息，请检查虚拟机是否正常启动")
+		return c.String(http.StatusNotFound, "无法获取虚拟机"+ids1[i]+"信息，请检查虚拟机是否正常启动")
 	}
 	s_count++
 
 	server := base.GetServerIP(provider, ids1[i])
 	server_detail := *server
 	if server_detail.Status != "ACTIVE" {
-		log.Warn("等待虚拟机启动，请稍后")
+		log.Warn("等待虚拟机" + ids1[i] + "启动，请稍后")
 		time.Sleep(5 * time.Second)
 		goto LOOP1
 	}
@@ -145,27 +218,109 @@ LOOP1:
 	server_ip := server_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
 	server_mac := server_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
 	server_fip, _ := d.SetFIP(server_ip.(string), server_mac.(string))
-	log.Info(server_name + " ip is " + server_ip.(string) + " floating ip is " + server_fip)
+	names1 = append(names1, server_name)
+	ips1 = append(ips1, server_ip.(string))
+	fips1 = append(fips1, server_fip)
+	log.Info(server_name + " is active now. The ip is " + server_ip.(string) + ", floating ip is " + server_fip)
+
 	i++
 	if i < d.SeverNum {
 		goto LOOP0
 	}
-	/*
-		//定义数组，存放agent主机ID
-		var ids2 []string
-		//定义channel提供并发
-		idschs2 := make([]chan string, d.AgentNum)
-		for j := 0; j < d.AgentNum; j++ {
-			idschs2[j] = make(chan string)
-			go d.CreateAgentVM(provider, j, idschs2[j])
-		}
 
-		for _, idch2 := range idschs2 {
-			ids2 = append(ids2, <-idch2)
-		}
+	//定义数组，存放agent主机ID等信息
+	var ids2 []string
+	var names2 []string
+	var ips2 []string
+	var fips2 []string
+	//并发创建agent虚拟机并记录id
+	idschs2 := make([]chan string, d.AgentNum)
+	for j := 0; j < d.AgentNum; j++ {
+		idschs2[j] = make(chan string)
+		go d.CreateAgentVM(provider, j, idschs2[j])
+	}
 
-		serverID, _ := json.Marshal(ids1)
-		agentID, _ := json.Marshal(ids2)
-	*/
+	for _, idch2 := range idschs2 {
+		ids2 = append(ids2, <-idch2)
+	}
+
+	j := 0
+LOOP2:
+	a_count := 0
+LOOP3:
+	if a_count == 49 {
+		log.Error("无法获取虚拟机" + ids2[j] + "信息，请检查虚拟机是否正常启动")
+		return c.String(http.StatusNotFound, "无法获取虚拟机"+ids2[j]+"信息，请检查虚拟机是否正常启动")
+	}
+	a_count++
+
+	agent := base.GetServerIP(provider, ids2[j])
+	agent_detail := *agent
+	if agent_detail.Status != "ACTIVE" {
+		log.Warn("等待虚拟机" + ids2[j] + "启动，请稍后")
+		time.Sleep(5 * time.Second)
+		goto LOOP3
+	}
+	agent_name := agent_detail.Name
+	agent_ip := agent_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
+	agent_mac := agent_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
+	agent_fip, _ := d.SetFIP(agent_ip.(string), agent_mac.(string))
+	names2 = append(names2, agent_name)
+	ips2 = append(ips2, agent_ip.(string))
+	fips2 = append(fips2, agent_fip)
+	log.Info(agent_name + " is active now. The ip is " + agent_ip.(string) + ", floating ip is " + agent_fip)
+
+	j++
+	if j < d.AgentNum {
+		goto LOOP2
+	}
+
+	//修改hosts文件，先拷贝，传完再删除
+	input, err := ioutil.ReadFile("hosts_base")
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	err = ioutil.WriteFile("hosts", input, 0644)
+	if err != nil {
+		log.Error("Error creating", "hosts")
+		log.Error(err)
+		return
+	}
+
+	//追加server信息
+	for i = 0; i < d.SeverNum; i++ {
+		cdhserver := CDHVM{role: "server", username: "root", password: "Admin123456", ip: ips1[i], name: names1[i], fip: fips1[i]}
+		cdhserver.AddInfo()
+	}
+
+	//追加agent信息
+	for j = 0; j < d.AgentNum; j++ {
+		cdhagent := CDHVM{role: "agent", username: "root", password: "Admin123456", ip: ips2[j], name: names2[j], fip: fips2[j]}
+		cdhagent.AddInfo()
+	}
+
+	//server删除hosts文件并上传新文件
+	for i = 0; i < d.SeverNum; i++ {
+		cdhserver := CDHVM{role: "server", username: "root", password: "Admin123456", ip: ips1[i], name: names1[i], fip: fips1[i]}
+		cdhserver.TransHosts()
+	}
+
+	//agent删除hosts文件并上传新文件
+	for j = 0; j < d.AgentNum; j++ {
+		cdhagent := CDHVM{role: "agent", username: "root", password: "Admin123456", ip: ips2[j], name: names2[j], fip: fips2[j]}
+		cdhagent.TransHosts()
+	}
+
+	//删除本地hosts文件
+	err = os.Remove("hosts")
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	//所有虚拟机并行执行脚本
+
 	return c.String(http.StatusOK, "OK")
 }

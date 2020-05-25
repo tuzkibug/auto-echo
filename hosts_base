@@ -1,7 +1,3 @@
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 
-server_ip server_name
-a1_ip a1_name
-a2_ip a2_name
-a3_ip a3_name

@@ -15,7 +15,7 @@ import (
 
 //ssh上传文件
 
-func connect(user, password, host string, port int) (*sftp.Client, error) {
+func Connect(user, password, host string, port int) (*sftp.Client, error) {
 	var (
 		auth         []ssh.AuthMethod
 		addr         string
@@ -56,7 +56,7 @@ func UploadSSH(c echo.Context) (err error) {
 
 	var sftpClient *sftp.Client
 	start := time.Now()
-	sftpClient, err = connect(u.Username, u.Password, u.SshIP, u.Sshport)
+	sftpClient, err = Connect(u.Username, u.Password, u.SshIP, u.Sshport)
 	if err != nil {
 		return
 	}
