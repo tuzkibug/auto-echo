@@ -6,14 +6,12 @@ import (
 	"os"
 	"strconv"
 
-	//"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"time"
 
 	"github.com/labstack/echo"
-	//"github.com/pkg/sftp"
 	"github.com/rackspace/gophercloud"
 	"github.com/rackspace/gophercloud/openstack"
 	log "github.com/sirupsen/logrus"
@@ -55,38 +53,57 @@ func (cdh *CDHVM) AddInfo() {
 //对象方法：上传hosts新文件
 func (cdh *CDHVM) TransHosts() {
 	ciphers := []string{}
-	ss_count := 0
-LOOP4:
-	if ss_count == 49 {
-		log.Error("无法连接至server虚拟机，请检查")
-		return
-	}
-	ss_count++
-	session, err := base.Sshconnect(cdh.username, cdh.password, cdh.fip, "", 22, ciphers)
-	if err != nil {
-		log.Error(err)
-		time.Sleep(5 * time.Second)
-		goto LOOP4
-	}
-	defer session.Close()
-	var serverstdoutBuf bytes.Buffer
-	session.Stdout = &serverstdoutBuf
-	session.Run("rm -rf /etc/hosts")
-	log.Info(cdh.name + "删除初始/etc/hosts文件成功")
+	for count := 0; count < 50; count++ {
+		session, err := base.Sshconnect(cdh.username, cdh.password, cdh.fip, "", 22, ciphers)
+		if err != nil {
+			log.Warn("连接虚拟机失败，请稍后")
+			log.Error(err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		defer session.Close()
+		var serverstdoutBuf bytes.Buffer
+		session.Stdout = &serverstdoutBuf
+		session.Run("rm -rf /etc/hosts")
+		log.Info(cdh.name + "删除初始/etc/hosts文件成功")
 
-	sftpClient, err := controllers.Connect(cdh.username, cdh.password, cdh.fip, 22)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	defer sftpClient.Close()
+		sftpClient, err := controllers.Connect(cdh.username, cdh.password, cdh.fip, 22)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		defer sftpClient.Close()
 
-	_, errStat := sftpClient.Stat("/etc/")
-	if errStat != nil {
-		log.Error(errStat)
-		return
+		_, errStat := sftpClient.Stat("/etc/")
+		if errStat != nil {
+			log.Error(errStat)
+			return
+		}
+		base.UploadFile(sftpClient, "hosts", "/etc/")
+		break
 	}
-	base.UploadFile(sftpClient, "hosts", "/etc/")
+}
+
+//对象方法：执行脚本
+func (cdh *CDHVM) ExecScript(cmdstr string, ch chan int) {
+	ciphers := []string{}
+	for count := 0; count < 50; count++ {
+		session, err := base.Sshconnect(cdh.username, cdh.password, cdh.fip, "", 22, ciphers)
+		if err != nil {
+			log.Warn("虚拟机连接失败，请稍后")
+			log.Error(err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		defer session.Close()
+		var serverstdoutBuf2 bytes.Buffer
+		session.Stdout = &serverstdoutBuf2
+		log.Info("This cmd will be executed " + cmdstr)
+		session.Run(cmdstr)
+		log.Info("server执行安装完成")
+		ch <- 1
+		break
+	}
 }
 
 //对象方法：创建server虚拟机
@@ -104,7 +121,7 @@ func (dd *CDHCluster) CreateAgentVM(provider *gophercloud.ProviderClient, no int
 }
 
 //对象方法：配置浮动IP
-func (dd *CDHCluster) SetFIP(server_ip string, server_mac string) (string, error) {
+func (dd *CDHCluster) SetFIP(server_ip string, server_mac string) string {
 	username := dd.Username
 	password := dd.Password
 	domainname := dd.DomainName
@@ -117,6 +134,7 @@ func (dd *CDHCluster) SetFIP(server_ip string, server_mac string) (string, error
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Error(err)
 		panic(err)
 	}
 	defer resp.Body.Close()
@@ -130,6 +148,7 @@ func (dd *CDHCluster) SetFIP(server_ip string, server_mac string) (string, error
 	client2 := &http.Client{}
 	resp2, err := client2.Do(req2)
 	if err != nil {
+		log.Error(err)
 		panic(err)
 	}
 	defer resp2.Body.Close()
@@ -148,6 +167,7 @@ func (dd *CDHCluster) SetFIP(server_ip string, server_mac string) (string, error
 	client3 := &http.Client{}
 	resp3, err := client3.Do(req3)
 	if err != nil {
+		log.Error(err)
 		panic(err)
 	}
 	defer resp3.Body.Close()
@@ -157,11 +177,12 @@ func (dd *CDHCluster) SetFIP(server_ip string, server_mac string) (string, error
 	__serverfResponse := FIP{}
 	if err := json.Unmarshal(body3, &__serverfResponse); err != nil {
 		log.Error(err)
-		return "no fip", err
+		return "no fip"
 	}
-	return __serverfResponse.FloatingIp.FloatingIp, nil
+	return __serverfResponse.FloatingIp.FloatingIp
 }
 
+//主函数
 func BuildCDHCluster(c echo.Context) (err error) {
 	d := new(CDHCluster)
 	if err = c.Bind(d); err != nil {
@@ -186,7 +207,7 @@ func BuildCDHCluster(c echo.Context) (err error) {
 	var names1 []string
 	var ips1 []string
 	var fips1 []string
-	//并发创建server虚拟机并记录id
+	//并发创建server虚拟机并记录id，server目前只支持一个，即i<=1，这段保留，以备后续扩展
 	idschs1 := make([]chan string, d.SeverNum)
 	for i := 0; i < d.SeverNum; i++ {
 		idschs1[i] = make(chan string)
@@ -195,37 +216,6 @@ func BuildCDHCluster(c echo.Context) (err error) {
 
 	for _, idch1 := range idschs1 {
 		ids1 = append(ids1, <-idch1)
-	}
-
-	i := 0
-LOOP0:
-	s_count := 0
-LOOP1:
-	if s_count == 49 {
-		log.Error("无法获取虚拟机" + ids1[i] + "信息，请检查虚拟机是否正常启动")
-		return c.String(http.StatusNotFound, "无法获取虚拟机"+ids1[i]+"信息，请检查虚拟机是否正常启动")
-	}
-	s_count++
-
-	server := base.GetServerIP(provider, ids1[i])
-	server_detail := *server
-	if server_detail.Status != "ACTIVE" {
-		log.Warn("等待虚拟机" + ids1[i] + "启动，请稍后")
-		time.Sleep(5 * time.Second)
-		goto LOOP1
-	}
-	server_name := server_detail.Name
-	server_ip := server_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
-	server_mac := server_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
-	server_fip, _ := d.SetFIP(server_ip.(string), server_mac.(string))
-	names1 = append(names1, server_name)
-	ips1 = append(ips1, server_ip.(string))
-	fips1 = append(fips1, server_fip)
-	log.Info(server_name + " is active now. The ip is " + server_ip.(string) + ", floating ip is " + server_fip)
-
-	i++
-	if i < d.SeverNum {
-		goto LOOP0
 	}
 
 	//定义数组，存放agent主机ID等信息
@@ -242,6 +232,38 @@ LOOP1:
 
 	for _, idch2 := range idschs2 {
 		ids2 = append(ids2, <-idch2)
+	}
+
+	//获取并记录server和agent信息
+	i := 0
+LOOP0:
+	s_count := 0
+LOOP1:
+	if s_count == 50 {
+		log.Error("无法获取虚拟机" + ids1[i] + "信息，请检查虚拟机是否正常启动")
+		return c.String(http.StatusNotFound, "无法获取虚拟机"+ids1[i]+"信息，请检查虚拟机是否正常启动")
+	}
+	s_count++
+
+	server := base.GetServerIP(provider, ids1[i])
+	server_detail := *server
+	if server_detail.Status != "ACTIVE" {
+		log.Warn("等待虚拟机" + ids1[i] + "启动，请稍后")
+		time.Sleep(5 * time.Second)
+		goto LOOP1
+	}
+	server_name := server_detail.Name
+	server_ip := server_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
+	server_mac := server_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
+	server_fip := d.SetFIP(server_ip.(string), server_mac.(string))
+	names1 = append(names1, server_name)
+	ips1 = append(ips1, server_ip.(string))
+	fips1 = append(fips1, server_fip)
+	log.Info(server_name + " is active now. The ip is " + server_ip.(string) + ", floating ip is " + server_fip)
+
+	i++
+	if i < d.SeverNum {
+		goto LOOP0
 	}
 
 	j := 0
@@ -264,7 +286,7 @@ LOOP3:
 	agent_name := agent_detail.Name
 	agent_ip := agent_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
 	agent_mac := agent_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
-	agent_fip, _ := d.SetFIP(agent_ip.(string), agent_mac.(string))
+	agent_fip := d.SetFIP(agent_ip.(string), agent_mac.(string))
 	names2 = append(names2, agent_name)
 	ips2 = append(ips2, agent_ip.(string))
 	fips2 = append(fips2, agent_fip)
@@ -320,7 +342,31 @@ LOOP3:
 		return err
 	}
 
-	//所有虚拟机并行执行脚本
+	//server执行脚本
+	chs := make([]chan int, d.SeverNum)
+	for i = 0; i < d.SeverNum; i++ {
+		chs[i] = make(chan int)
+		scmdstr := "/root/Config_CM_Server_arg.sh 1 " + names1[i]
+		cdhserver := CDHVM{role: "server", username: "root", password: "Admin123456", ip: ips1[i], name: names1[i], fip: fips1[i]}
+		go cdhserver.ExecScript(scmdstr, chs[i])
+	}
 
-	return c.String(http.StatusOK, "OK")
+	for _, ch := range chs {
+		<-ch
+	}
+
+	//agent并行执行脚本
+	chs = make([]chan int, d.AgentNum)
+	for j = 0; j < d.AgentNum; j++ {
+		chs[j] = make(chan int)
+		acmdstr := "/root/Config_CM_Agent_arg.sh 1 " + names1[0] + " " + names2[j]
+		cdhagent := CDHVM{role: "agent", username: "root", password: "Admin123456", ip: ips2[j], name: names2[j], fip: fips2[j]}
+		go cdhagent.ExecScript(acmdstr, chs[j])
+	}
+
+	for _, ch := range chs {
+		<-ch
+	}
+
+	return c.String(http.StatusOK, fips1[0]+":7180")
 }
