@@ -228,6 +228,18 @@ func BuildMysqlCluster(c echo.Context) (err error) {
 	log.Info("Slave mac is " + slave_mac_addr)
 	log.Info("Mysql service is up in " + fip + ":3306" + ". Username is root. Password is " + m.MysqlRootPassword)
 
+	//删除本地master/slave临时文件
+	err = os.Remove("master.txt")
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	err = os.Remove("slave.txt")
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
 	return c.String(http.StatusOK, fip+" "+"3306"+" "+"root "+m.MysqlRootPassword)
 }
 
