@@ -19,6 +19,18 @@ import (
 	"github.com/tuzkibug/auto-echo/controllers"
 )
 
+//server虚拟机信息相关全局变量
+var ids1 []string
+var names1 []string
+var ips1 []string
+var fips1 []string
+
+//agent虚拟机信息相关全局变量
+var ids2 []string
+var names2 []string
+var ips2 []string
+var fips2 []string
+
 //定义CDH虚拟机对象，server和agent均属于该对象的实例
 type CDHVM struct {
 	role     string
@@ -29,7 +41,7 @@ type CDHVM struct {
 	fip      string
 }
 
-//对象方法：追加文件信息
+//CDHVM对象方法：追加文件信息
 func (cdh *CDHVM) AddInfo() {
 	str := []byte("\n" + cdh.ip + " " + cdh.name)
 
@@ -50,13 +62,17 @@ func (cdh *CDHVM) AddInfo() {
 	}
 }
 
-//对象方法：上传hosts新文件
+//CDHVM对象方法：上传hosts新文件
 func (cdh *CDHVM) TransHosts() {
 	ciphers := []string{}
-	for count := 0; count < 50; count++ {
+	for count := 0; count < 51; count++ {
 		session, err := base.Sshconnect(cdh.username, cdh.password, cdh.fip, "", 22, ciphers)
+		if count == 50 {
+			log.Error("连接虚拟机超时，请检查")
+			break
+		}
 		if err != nil {
-			log.Warn("连接虚拟机失败，请稍后")
+			log.Warn("虚拟机还未准备好，请稍后")
 			log.Error(err)
 			time.Sleep(5 * time.Second)
 			continue
@@ -84,13 +100,17 @@ func (cdh *CDHVM) TransHosts() {
 	}
 }
 
-//对象方法：执行脚本
+//CDHVM对象方法：执行脚本
 func (cdh *CDHVM) ExecScript(cmdstr string, ch chan int) {
 	ciphers := []string{}
-	for count := 0; count < 50; count++ {
+	for count := 0; count < 51; count++ {
 		session, err := base.Sshconnect(cdh.username, cdh.password, cdh.fip, "", 22, ciphers)
+		if count == 50 {
+			log.Error("连接虚拟机超时，请检查")
+			break
+		}
 		if err != nil {
-			log.Warn("虚拟机连接失败，请稍后")
+			log.Warn("虚拟机还未准备好，请稍后")
 			log.Error(err)
 			time.Sleep(5 * time.Second)
 			continue
@@ -106,21 +126,21 @@ func (cdh *CDHVM) ExecScript(cmdstr string, ch chan int) {
 	}
 }
 
-//对象方法：创建server虚拟机
+//CDHCluster对象方法：创建server虚拟机
 func (dd *CDHCluster) CreateServerVM(provider *gophercloud.ProviderClient, no int, id chan string) {
 	server_name := base.CreateCDHServerName() + strconv.Itoa(no)
 	server_id := base.CreateCDHServer(provider, server_name, dd.ServerFlavorID, dd.ServerImageID, dd.NetworkID)
 	id <- server_id
 }
 
-//对象方法：创建agent虚拟机
+//CDHCluster对象方法：创建agent虚拟机
 func (dd *CDHCluster) CreateAgentVM(provider *gophercloud.ProviderClient, no int, id chan string) {
 	a_name := base.CreateCDHAgentName() + strconv.Itoa(no)
 	agent_id := base.CreateCDHAgent(provider, a_name, dd.AgentFlavorID, dd.AgentImageID, dd.NetworkID)
 	id <- agent_id
 }
 
-//对象方法：配置浮动IP
+//CDHCluster对象方法：配置浮动IP
 func (dd *CDHCluster) SetFIP(server_ip string, server_mac string) string {
 	username := dd.Username
 	password := dd.Password
@@ -182,6 +202,30 @@ func (dd *CDHCluster) SetFIP(server_ip string, server_mac string) string {
 	return __serverfResponse.FloatingIp.FloatingIp
 }
 
+//CDHCluster对象方法：获取虚拟机信息
+func (dd *CDHCluster) GetInfo(provider *gophercloud.ProviderClient, id string) (vmName string, vmIp string, vmFip string) {
+	for count := 0; count < 51; count++ {
+		if count == 50 {
+			log.Error("无法获取虚拟机" + id + "信息，请检查虚拟机是否正常启动")
+			break
+		}
+		vm := base.GetServerIP(provider, id)
+		vmDetail := *vm
+		if vmDetail.Status != "ACTIVE" {
+			log.Warn("等待虚拟机" + id + "启动，请稍后")
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		vmName := vmDetail.Name
+		vmIp := vmDetail.Addresses[dd.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
+		vmMac := vmDetail.Addresses[dd.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
+		vmFip := dd.SetFIP(vmIp.(string), vmMac.(string))
+		log.Info(vmName + " is active now. The ip is " + vmIp.(string) + ", floating ip is " + vmFip)
+		return vmName, vmIp.(string), vmFip
+	}
+	return
+}
+
 //主函数
 func BuildCDHCluster(c echo.Context) (err error) {
 	d := new(CDHCluster)
@@ -202,11 +246,6 @@ func BuildCDHCluster(c echo.Context) (err error) {
 		return
 	}
 
-	//定义数组，存放server主机ID等信息
-	var ids1 []string
-	var names1 []string
-	var ips1 []string
-	var fips1 []string
 	//并发创建server虚拟机并记录id，server目前只支持一个，即i<=1，这段保留，以备后续扩展
 	idschs1 := make([]chan string, d.SeverNum)
 	for i := 0; i < d.SeverNum; i++ {
@@ -218,11 +257,6 @@ func BuildCDHCluster(c echo.Context) (err error) {
 		ids1 = append(ids1, <-idch1)
 	}
 
-	//定义数组，存放agent主机ID等信息
-	var ids2 []string
-	var names2 []string
-	var ips2 []string
-	var fips2 []string
 	//并发创建agent虚拟机并记录id
 	idschs2 := make([]chan string, d.AgentNum)
 	for j := 0; j < d.AgentNum; j++ {
@@ -234,70 +268,23 @@ func BuildCDHCluster(c echo.Context) (err error) {
 		ids2 = append(ids2, <-idch2)
 	}
 
-	//获取并记录server和agent信息
-	i := 0
-LOOP0:
-	s_count := 0
-LOOP1:
-	if s_count == 50 {
-		log.Error("无法获取虚拟机" + ids1[i] + "信息，请检查虚拟机是否正常启动")
-		return c.String(http.StatusNotFound, "无法获取虚拟机"+ids1[i]+"信息，请检查虚拟机是否正常启动")
-	}
-	s_count++
-
-	server := base.GetServerIP(provider, ids1[i])
-	server_detail := *server
-	if server_detail.Status != "ACTIVE" {
-		log.Warn("等待虚拟机" + ids1[i] + "启动，请稍后")
-		time.Sleep(5 * time.Second)
-		goto LOOP1
-	}
-	server_name := server_detail.Name
-	server_ip := server_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
-	server_mac := server_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
-	server_fip := d.SetFIP(server_ip.(string), server_mac.(string))
-	names1 = append(names1, server_name)
-	ips1 = append(ips1, server_ip.(string))
-	fips1 = append(fips1, server_fip)
-	log.Info(server_name + " is active now. The ip is " + server_ip.(string) + ", floating ip is " + server_fip)
-
-	i++
-	if i < d.SeverNum {
-		goto LOOP0
+	//获取并记录所有server信息
+	for i := 0; i < d.SeverNum; i++ {
+		vm_name, vm_ip, vm_fip := d.GetInfo(provider, ids1[i])
+		names1 = append(names1, vm_name)
+		ips1 = append(ips1, vm_ip)
+		fips1 = append(fips1, vm_fip)
 	}
 
-	j := 0
-LOOP2:
-	a_count := 0
-LOOP3:
-	if a_count == 49 {
-		log.Error("无法获取虚拟机" + ids2[j] + "信息，请检查虚拟机是否正常启动")
-		return c.String(http.StatusNotFound, "无法获取虚拟机"+ids2[j]+"信息，请检查虚拟机是否正常启动")
-	}
-	a_count++
-
-	agent := base.GetServerIP(provider, ids2[j])
-	agent_detail := *agent
-	if agent_detail.Status != "ACTIVE" {
-		log.Warn("等待虚拟机" + ids2[j] + "启动，请稍后")
-		time.Sleep(5 * time.Second)
-		goto LOOP3
-	}
-	agent_name := agent_detail.Name
-	agent_ip := agent_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["addr"]
-	agent_mac := agent_detail.Addresses[d.NetworkName].([]interface{})[0].(map[string]interface{})["OS-EXT-IPS-MAC:mac_addr"]
-	agent_fip := d.SetFIP(agent_ip.(string), agent_mac.(string))
-	names2 = append(names2, agent_name)
-	ips2 = append(ips2, agent_ip.(string))
-	fips2 = append(fips2, agent_fip)
-	log.Info(agent_name + " is active now. The ip is " + agent_ip.(string) + ", floating ip is " + agent_fip)
-
-	j++
-	if j < d.AgentNum {
-		goto LOOP2
+	//获取并记录所有agent信息
+	for j := 0; j < d.AgentNum; j++ {
+		vm_name, vm_ip, vm_fip := d.GetInfo(provider, ids2[j])
+		names2 = append(names2, vm_name)
+		ips2 = append(ips2, vm_ip)
+		fips2 = append(fips2, vm_fip)
 	}
 
-	//修改hosts文件，先拷贝，传完再删除
+	//修改hosts文件，先拷贝到远端，传完再删除本地文件
 	input, err := ioutil.ReadFile("hosts_base")
 	if err != nil {
 		log.Error(err)
@@ -312,25 +299,25 @@ LOOP3:
 	}
 
 	//追加server信息
-	for i = 0; i < d.SeverNum; i++ {
+	for i := 0; i < d.SeverNum; i++ {
 		cdhserver := CDHVM{role: "server", username: "root", password: "Admin123456", ip: ips1[i], name: names1[i], fip: fips1[i]}
 		cdhserver.AddInfo()
 	}
 
 	//追加agent信息
-	for j = 0; j < d.AgentNum; j++ {
+	for j := 0; j < d.AgentNum; j++ {
 		cdhagent := CDHVM{role: "agent", username: "root", password: "Admin123456", ip: ips2[j], name: names2[j], fip: fips2[j]}
 		cdhagent.AddInfo()
 	}
 
 	//server删除hosts文件并上传新文件
-	for i = 0; i < d.SeverNum; i++ {
+	for i := 0; i < d.SeverNum; i++ {
 		cdhserver := CDHVM{role: "server", username: "root", password: "Admin123456", ip: ips1[i], name: names1[i], fip: fips1[i]}
 		cdhserver.TransHosts()
 	}
 
 	//agent删除hosts文件并上传新文件
-	for j = 0; j < d.AgentNum; j++ {
+	for j := 0; j < d.AgentNum; j++ {
 		cdhagent := CDHVM{role: "agent", username: "root", password: "Admin123456", ip: ips2[j], name: names2[j], fip: fips2[j]}
 		cdhagent.TransHosts()
 	}
@@ -344,7 +331,7 @@ LOOP3:
 
 	//server执行脚本
 	chs := make([]chan int, d.SeverNum)
-	for i = 0; i < d.SeverNum; i++ {
+	for i := 0; i < d.SeverNum; i++ {
 		chs[i] = make(chan int)
 		scmdstr := "/root/Config_CM_Server_arg.sh 1 " + names1[i]
 		cdhserver := CDHVM{role: "server", username: "root", password: "Admin123456", ip: ips1[i], name: names1[i], fip: fips1[i]}
@@ -357,7 +344,7 @@ LOOP3:
 
 	//agent并行执行脚本
 	chs = make([]chan int, d.AgentNum)
-	for j = 0; j < d.AgentNum; j++ {
+	for j := 0; j < d.AgentNum; j++ {
 		chs[j] = make(chan int)
 		acmdstr := "/root/Config_CM_Agent_arg.sh 1 " + names1[0] + " " + names2[j]
 		cdhagent := CDHVM{role: "agent", username: "root", password: "Admin123456", ip: ips2[j], name: names2[j], fip: fips2[j]}
