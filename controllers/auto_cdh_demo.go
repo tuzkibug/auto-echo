@@ -119,7 +119,7 @@ func (cdh *CDHVM) ExecScript(cmdstr string, ch chan int) {
 		session.Stdout = &serverstdoutBuf2
 		log.Info("This cmd will be executed " + cmdstr)
 		session.Run(cmdstr)
-		log.Info("server执行安装完成")
+		log.Info("脚本执行完成")
 		ch <- 1
 		break
 	}
