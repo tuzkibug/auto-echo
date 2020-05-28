@@ -100,7 +100,6 @@ func CreateCDHAgent(provider *gophercloud.ProviderClient, name string, flavorID 
 		log.Error(err)
 		return
 	}
-	//fmt.Println(ss)
 	return ss.ID
 }
 

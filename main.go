@@ -17,5 +17,5 @@ func main() {
 	//全流程自动化拉起CDH集群
 	e.POST("/democdh", controllers.BuildCDHCluster)
 
-	e.Logger.Fatal(e.Start(":8889"))
+	e.Logger.Fatal(e.Start(":42699"))
 }

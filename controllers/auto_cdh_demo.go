@@ -127,20 +127,20 @@ func (cdh *CDHVM) ExecScript(cmdstr string, ch chan int) {
 
 //CDHCluster对象方法：创建server虚拟机
 func (dd *CDHCluster) CreateServerVM(provider *gophercloud.ProviderClient, no int, id chan string) {
-	server_name := base.CreateCDHServerName() + strconv.Itoa(no)
-	server_id := base.CreateCDHServer(provider, server_name, dd.ServerFlavorID, dd.ServerImageID, dd.NetworkID)
-	id <- server_id
+	serverName := base.CreateCDHServerName() + strconv.Itoa(no)
+	serverId := base.CreateCDHServer(provider, serverName, dd.ServerFlavorID, dd.ServerImageID, dd.NetworkID)
+	id <- serverId
 }
 
 //CDHCluster对象方法：创建agent虚拟机
 func (dd *CDHCluster) CreateAgentVM(provider *gophercloud.ProviderClient, no int, id chan string) {
-	a_name := base.CreateCDHAgentName() + strconv.Itoa(no)
-	agent_id := base.CreateCDHAgent(provider, a_name, dd.AgentFlavorID, dd.AgentImageID, dd.NetworkID)
-	id <- agent_id
+	aName := base.CreateCDHAgentName() + strconv.Itoa(no)
+	agentID := base.CreateCDHAgent(provider, aName, dd.AgentFlavorID, dd.AgentImageID, dd.NetworkID)
+	id <- agentID
 }
 
 //CDHCluster对象方法：配置浮动IP
-func (dd *CDHCluster) SetFIP(server_ip string, server_mac string) string {
+func (dd *CDHCluster) SetFIP(serverIP string, serverMac string) string {
 	username := dd.Username
 	password := dd.Password
 	domainname := dd.DomainName
@@ -160,9 +160,9 @@ func (dd *CDHCluster) SetFIP(server_ip string, server_mac string) string {
 	token := resp.Header.Get("X-Subject-Token")
 
 	//通过mac地址获取server虚拟机port_id
-	port_url := "http://" + dd.OpenstackIP + ":9696/v2.0/ports?mac_address=" + server_mac + "&fields=id"
+	portURL := "http://" + dd.OpenstackIP + ":9696/v2.0/ports?mac_address=" + serverMac + "&fields=id"
 	var jsonStr2 = []byte("")
-	req2, err := http.NewRequest("GET", port_url, bytes.NewBuffer(jsonStr2))
+	req2, err := http.NewRequest("GET", portURL, bytes.NewBuffer(jsonStr2))
 	req2.Header.Set("X-Auth-Token", token)
 	client2 := &http.Client{}
 	resp2, err := client2.Do(req2)
@@ -173,14 +173,14 @@ func (dd *CDHCluster) SetFIP(server_ip string, server_mac string) string {
 	defer resp2.Body.Close()
 	body, _ := ioutil.ReadAll(resp2.Body)
 	str := string(body)
-	port_id := str[17:53]
+	portId := str[17:53]
 
-	floating_url := "http://" + dd.OpenstackIP + ":9696/v2.0/floatingips"
-	floating_ip_network_id := dd.FloatingNetworkID
-	floating_req_body := `{"floatingip": {"floating_network_id": "` + floating_ip_network_id + `","tenant_id": "` + dd.TenantID + `","project_id": "` + dd.TenantID + `","port_id": "` + port_id + `","fixed_ip_address": "` + server_ip + `"}}`
+	floatingUrl := "http://" + dd.OpenstackIP + ":9696/v2.0/floatingips"
+	floatingIpNetworkId := dd.FloatingNetworkID
+	floatingReqBody := `{"floatingip": {"floating_network_id": "` + floatingIpNetworkId + `","tenant_id": "` + dd.TenantID + `","project_id": "` + dd.TenantID + `","port_id": "` + portId + `","fixed_ip_address": "` + serverIP + `"}}`
 
-	var jsonStr3 = []byte(floating_req_body)
-	req3, err := http.NewRequest("POST", floating_url, bytes.NewBuffer(jsonStr3))
+	var jsonStr3 = []byte(floatingReqBody)
+	req3, err := http.NewRequest("POST", floatingUrl, bytes.NewBuffer(jsonStr3))
 	req3.Header.Set("X-Auth-Token", token)
 
 	client3 := &http.Client{}
