@@ -73,7 +73,7 @@ func (cdh *CDHVM) TransHosts() {
 		if err != nil {
 			log.Warn("虚拟机还未准备好，请稍后")
 			log.Error(err)
-			time.Sleep(5 * time.Second)
+			time.Sleep(10 * time.Second)
 			continue
 		}
 		defer session.Close()
@@ -111,7 +111,7 @@ func (cdh *CDHVM) ExecScript(cmdstr string, ch chan int) {
 		if err != nil {
 			log.Warn("虚拟机还未准备好，请稍后")
 			log.Error(err)
-			time.Sleep(5 * time.Second)
+			time.Sleep(10 * time.Second)
 			continue
 		}
 		defer session.Close()
@@ -128,14 +128,14 @@ func (cdh *CDHVM) ExecScript(cmdstr string, ch chan int) {
 //CDHCluster对象方法：创建server虚拟机
 func (dd *CDHCluster) CreateServerVM(provider *gophercloud.ProviderClient, no int, id chan string) {
 	serverName := base.CreateCDHServerName() + strconv.Itoa(no)
-	serverId := base.CreateCDHServer(provider, serverName, dd.ServerFlavorID, dd.ServerImageID, dd.NetworkID)
+	serverId := base.CreateCDHVM(provider, serverName, dd.ServerFlavorID, dd.ServerImageID, dd.NetworkID)
 	id <- serverId
 }
 
 //CDHCluster对象方法：创建agent虚拟机
 func (dd *CDHCluster) CreateAgentVM(provider *gophercloud.ProviderClient, no int, id chan string) {
-	aName := base.CreateCDHAgentName() + strconv.Itoa(no)
-	agentID := base.CreateCDHAgent(provider, aName, dd.AgentFlavorID, dd.AgentImageID, dd.NetworkID)
+	agentName := base.CreateCDHAgentName() + strconv.Itoa(no)
+	agentID := base.CreateCDHVM(provider, agentName, dd.AgentFlavorID, dd.AgentImageID, dd.NetworkID)
 	id <- agentID
 }
 
@@ -212,7 +212,7 @@ func (dd *CDHCluster) GetInfo(provider *gophercloud.ProviderClient, id string) (
 		vmDetail := *vm
 		if vmDetail.Status != "ACTIVE" {
 			log.Warn("等待虚拟机" + id + "启动，请稍后")
-			time.Sleep(5 * time.Second)
+			time.Sleep(10 * time.Second)
 			continue
 		}
 		vmName := vmDetail.Name

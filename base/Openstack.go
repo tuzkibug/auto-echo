@@ -49,40 +49,13 @@ func CreateMysql(provider *gophercloud.ProviderClient, filename string, flavorID
 	return ss.ID
 }
 
-//创建CDHserver虚拟机
-func CreateCDHServer(provider *gophercloud.ProviderClient, name string, flavorID string, imageID string, netID string) (ServerID string) {
+//创建CDH虚拟机
+func CreateCDHVM(provider *gophercloud.ProviderClient, name string, flavorID string, imageID string, netID string) (ServerID string) {
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
 		Region: "RegionOne",
 	})
 	//随机生成虚拟机名称
 	//name := CreateCDHServerName()
-
-	ss, err := servers.Create(client, servers.CreateOpts{
-		Name:      name,
-		FlavorRef: flavorID,
-		ImageRef:  imageID,
-		//AvailabilityZone:"nova",
-		Networks: []servers.Network{
-			servers.Network{UUID: netID},
-		},
-		//UserData: file,
-		//AdminPass: "root",
-	}).Extract()
-
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	return ss.ID
-}
-
-//创建CDHagent虚拟机
-func CreateCDHAgent(provider *gophercloud.ProviderClient, name string, flavorID string, imageID string, netID string) (ServerID string) {
-	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
-		Region: "RegionOne",
-	})
-	//随机生成虚拟机名称
-	//name := CreateCDHAgentName()
 
 	ss, err := servers.Create(client, servers.CreateOpts{
 		Name:      name,
