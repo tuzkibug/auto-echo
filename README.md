@@ -13,15 +13,8 @@
 
 ## base_master.txt & base_slave.txt    
 用于mysql数据库主备节点启动的文件模板，其中需替换root密码，数据库密码和主节点IP  
-
-## master.txt & slave.txt  
-替换用户名密码等参数后生成的新的配置文件  
-
 ## hosts_base  
-用于CDH虚拟机记录主机节点信息的文件模板，需替换IP和主机名  
-
-## hosts  
-替换完成的hosts文件，上传到/etc/hosts完成替换  
+用于CDH虚拟机记录主机节点信息的文件模板，需添加IP和主机名  
 
 ## trash_can  
 废弃的文件  
